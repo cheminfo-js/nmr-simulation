@@ -1,0 +1,31 @@
+{
+  "name": "nmr-simulation",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cheminfo-js/nmr-simulation.git"
+  },
+  "keywords": [
+    "nmr",
+    "simulation",
+    "simulator",
+    "rmn",
+    "spin",
+    "system"
+  ],
+  "author": "Michaël Zasso",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/cheminfo-js/nmr-simulation/issues"
+  },
+  "homepage": "https://github.com/cheminfo-js/nmr-simulation#readme",
+  "dependencies": {
+    "ml-matrix": "^1.1.2",
+    "ml-sparse-matrix": "^0.1.0"
+  }
+}
