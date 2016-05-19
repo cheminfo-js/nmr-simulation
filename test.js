@@ -15,8 +15,11 @@ const system = new nmr.SpinSystem(
 );
 
 const simulation = nmr.simulate1D(system, {
+    frequency: 400.082470657773,
     from: 0,
     to: 11,
-    frequency: 400.082470657773,
-    lineWidth: 1
+    lineWidth: 1,
+    nbPoints: 16384
 });
+
+console.log(JSON.stringify(simulation));

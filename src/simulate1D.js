@@ -2,11 +2,14 @@
 
 const Matrix = require('ml-matrix');
 const SparseMatrix = require('ml-sparse-matrix');
+const binarySearch = require('ml-binary-search');
+const newArray = require('new-array');
+
 const getPauli = require('./pauli');
 
 function simulate1d(spinSystem, options = {}) {
+    var i;
     const frequencyMHz = (options.frequency || 400);
-    const frequency = frequencyMHz * 1e6;
     const from = (options.from || 0) * frequencyMHz;
     const to = (options.to || 10) * frequencyMHz;
     const lineWidth = options.lineWidth || 1;
@@ -14,92 +17,168 @@ function simulate1d(spinSystem, options = {}) {
 
     const chemicalShifts = spinSystem.chemicalShifts.slice();
     const shift = 0;//(from + to) / 2;
-    for (var i = 0; i <chemicalShifts.length; i++) {
+    for (i = 0; i < chemicalShifts.length; i++) {
         chemicalShifts[i] = chemicalShifts[i] * frequencyMHz + shift;
     }
-    
+
     let lineWidthPoints = (nbPoints * lineWidth / Math.abs(to - from));
     let lnPoints = lineWidthPoints * 50;
     lineWidthPoints = Math.pow(lineWidthPoints / 2, 2);
-    
+
     const lorentzianLength = lnPoints | 0;
     const lorentzian = new Array(lorentzianLength);
     for (i = 0; i < lorentzianLength; i++) {
         lorentzian[i] = 1e12 * lineWidthPoints / (Math.pow(i - lnPoints / 2, 2) + lineWidthPoints);
     }
 
-    const result = new Array(nbPoints);
+    const result = new newArray(nbPoints, 0);
 
     const multiplicity = spinSystem.multiplicity;
     for (var h = 0; h < spinSystem.clusters.length; h++) {
         const cluster = spinSystem.clusters[h];
+        var weight = 1;
+        var sumI = 0;
+        const frequencies = [];
+        const intensities = [];
+        if (false) {
+            // if(tnonZeros.contains(2)){
+        } else {
+            const hamiltonian = getHamiltonian(
+                chemicalShifts,
+                spinSystem.couplingConstants,
+                multiplicity,
+                spinSystem.connectivity,
+                cluster
+            );
 
-        const hamiltonian = getHamiltonian(
-            chemicalShifts,
-            spinSystem.couplingConstants,
-            multiplicity,
-            spinSystem.connectivity,
-            cluster
-        );
+            const hamSize = hamiltonian.rows;
+            const evd = new Matrix.DC.EVD(hamiltonian);
+            const V = evd.eigenvectorMatrix;
+            const diagB = evd.realEigenvalues;
+            const assignmentMatrix = new SparseMatrix(hamSize, hamSize);
+            const multLen = cluster.length;
+            weight = 0;
+            for (var n = 0; n < multLen; n++) {
+                const L = getPauli(multiplicity[cluster[n]]);
 
-        const hamSize = hamiltonian.rows;
-        const evd = new Matrix.DC.EVD(hamiltonian);
-        const B = evd.diagonalMatrix;
-        const V = evd.eigenvectorMatrix;
-        const diagB = evd.realEigenvalues;
-        const assignmentMatrix = new SparseMatrix(hamSize, hamSize);
-        const multLen = cluster.length;
-        let weight = 0;
-        for (var n = 0; n < multLen; n++) {
-            const L = getPauli(multiplicity[cluster[n]]);
+                let temp = 1;
+                for (var j = 0; j < n; j++) {
+                    temp *= multiplicity[cluster[j]];
+                }
+                const A = SparseMatrix.eye(temp);
 
-            let temp = 1;
-            for (var j = 0; j < n; j++) {
-                temp *= multiplicity[cluster[j]];
+                temp = 1;
+                for (j = n + 1; j < multLen; j++) {
+                    temp *= multiplicity[cluster[j]];
+                }
+                const B = SparseMatrix.eye(temp);
+                const tempMat = A.kroneckerProduct(L.m).kroneckerProduct(B);
+                if (cluster[n] >= 0) {
+                    assignmentMatrix.add(tempMat.mul(cluster[n] + 1));
+                    weight++;
+                } else {
+                    assignmentMatrix.add(tempMat.mul(0 - (cluster[n] + 1)));
+
+                }
             }
-            const A = SparseMatrix.eye(temp);
 
-            temp = 1;
-            for (j = n + 1; j < multLen; j++) {
-                temp *= multiplicity[cluster[j]];
-            }
-            const B = SparseMatrix.eye(temp);
-            const tempMat = A.kroneckerProduct(L.m).kroneckerProduct(B);
-            if (cluster[n] > 0) {
-                assignmentMatrix.add(tempMat.mul(cluster[n] + 1));
-                weight++;
-            } else {
-                assignmentMatrix.add(tempMat.mul(0 - (cluster[n] + 1)));
+            let rhoip = new SparseMatrix(hamSize, hamSize, {
+                threshold: 1e-3
+            });
+            assignmentMatrix.forEachNonZero((i, j, v) => {
+                if (v > 0) {
+                    const row = V[j];
+                    for (var k = 0; k < row.length; k++) {
+                        if (row[k] !== 0) {
+                            rhoip.set(i, k, rhoip.get(i, k) + row[k]);
+                        }
+                    }
+                }
+                return v;
+            });
 
-            }
+            let rhoip2 = rhoip.clone();
+            assignmentMatrix.forEachNonZero((i, j, v) => {
+                if (v < 0) {
+                    const row = V[j];
+                    for (var k = 0; k < row.length; k++) {
+                        if (row[k] !== 0) {
+                            rhoip2.set(i, k, rhoip2.get(i, k) + row[k]);
+                        }
+                    }
+                }
+                return v;
+            });
+
+            const tV = new SparseMatrix(V.transpose());
+            rhoip = tV.mmul(rhoip);
+            triuTimesAbs(rhoip, 1e-1);
+            rhoip2 = tV.mmul(rhoip2);
+            triuTimesAbs(rhoip2, 1e-1);
+
+            rhoip2.forEachNonZero((i, j, v) => {
+                var val = rhoip.get(i, j);
+                val = Math.min(Math.abs(val), Math.abs(v));
+                val *= val;
+
+                sumI += val;
+                var valFreq = diagB[i] - diagB[j];
+                var insertIn = binarySearch(frequencies, valFreq);
+                if (insertIn < 0) {
+                    frequencies.splice(-1 - insertIn, 0, valFreq);
+                    intensities.splice(-1 - insertIn, 0, val);
+                } else {
+                    intensities[insertIn] += val;
+                }
+            });
         }
 
-        let rhoip = new SparseMatrix(hamSize, hamSize);
-        assignmentMatrix.forEachNonZero((i, j, v) => {
-            if (v > 0) {
-                const row = V[j];
-                for (var k = 0; k < row.length; k++) {
-                    if (row[k] !== 0) {
-                        rhoip.set(i, k, rhoip.get(i, k) + row[k]);
-                    }
+        const numFreq = frequencies.length;
+        if (numFreq > 0) {
+            weight = weight / sumI;
+            const diff = lineWidth / 16;
+            let valFreq = frequencies[0];
+            let inte = intensities[0];
+            let count = 1;
+            for (i = 0; i < numFreq; i++) {
+                if (Math.abs(frequencies[i] - valFreq / count) < diff) {
+                    inte += intensities[i];
+                    valFreq += frequencies[i];
+                    count++;
+                } else {
+                    addPeak(result, valFreq / count, inte * weight, from, to, nbPoints, lorentzian);
+                    valFreq = frequencies[i];
+                    inte = intensities[i];
+                    count = 1;
                 }
             }
-            return v;
-        });
-
-        let rhoip2 = rhoip.clone();
-        assignmentMatrix.forEachNonZero((i, j, v) => {
-            if (v < 0) {
-                const row = V[j];
-                for (var k = 0; k < row.length; k++) {
-                    if (row[k] !== 0) {
-                        rhoip2.set(i, k, rhoip2.get(i, k) + row[k]);
-                    }
-                }
-            }
-            return v;
-        });
+            addPeak(result, valFreq / count, inte * weight, from, to, nbPoints, lorentzian);
+        }
     }
+
+    return result;
+}
+
+function addPeak(result, freq, height, from, to, nbPoints, lorentzian) {
+    const center = (nbPoints * (-freq-from) / (to - from)) | 0;
+    const lnPoints = lorentzian.length;
+    var index = 0;
+    var indexLorentz = 0;
+    for (var i = center - lnPoints / 2; i < center + lnPoints / 2; i++) {
+        index = i | 0;
+        if (i >= 0 && i < nbPoints) {
+            result[index] = result[index] + lorentzian[indexLorentz] * height;
+        }
+        indexLorentz++;
+    }
+}
+
+function triuTimesAbs(A, val) {
+    A.forEachNonZero((i, j, v) => {
+        if (i > j) return 0;
+        if (Math.abs(v) <= val) return 0;
+        return v;
+    });
 }
 
 function getHamiltonian(chemicalShifts, couplingConstants, multiplicity, conMatrix, cluster) {
@@ -107,7 +186,7 @@ function getHamiltonian(chemicalShifts, couplingConstants, multiplicity, conMatr
     for (var i = 0; i < cluster.length; i++) {
         hamSize *= multiplicity[cluster[i]];
     }
-    
+
     const clusterHam = new SparseMatrix(hamSize, hamSize);
 
     for (var pos = 0; pos < cluster.length; pos++) {
