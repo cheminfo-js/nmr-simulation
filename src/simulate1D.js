@@ -1,5 +1,6 @@
 'use strict';
 
+const Matrix = require('ml-matrix');
 const SparseMatrix = require('ml-sparse-matrix');
 const getPauli = require('./pauli');
 
@@ -29,16 +30,75 @@ function simulate1d(spinSystem, options = {}) {
 
     const result = new Array(nbPoints);
 
+    const multiplicity = spinSystem.multiplicity;
     for (var h = 0; h < spinSystem.clusters.length; h++) {
         const cluster = spinSystem.clusters[h];
+
         const hamiltonian = getHamiltonian(
             chemicalShifts,
             spinSystem.couplingConstants,
-            spinSystem.multiplicity,
+            multiplicity,
             spinSystem.connectivity,
             cluster
         );
-        console.log(JSON.stringify(hamiltonian.to2DArray()));
+
+        const hamSize = hamiltonian.rows;
+        const evd = new Matrix.DC.EVD(hamiltonian);
+        const B = evd.diagonalMatrix;
+        const V = evd.eigenvectorMatrix;
+        const diagB = evd.realEigenvalues;
+        const assignmentMatrix = new SparseMatrix(hamSize, hamSize);
+        const multLen = cluster.length;
+        let weight = 0;
+        for (var n = 0; n < multLen; n++) {
+            const L = getPauli(multiplicity[cluster[n]]);
+
+            let temp = 1;
+            for (var j = 0; j < n; j++) {
+                temp *= multiplicity[cluster[j]];
+            }
+            const A = SparseMatrix.eye(temp);
+
+            temp = 1;
+            for (j = n + 1; j < multLen; j++) {
+                temp *= multiplicity[cluster[j]];
+            }
+            const B = SparseMatrix.eye(temp);
+            const tempMat = A.kroneckerProduct(L.m).kroneckerProduct(B);
+            if (cluster[n] > 0) {
+                assignmentMatrix.add(tempMat.mul(cluster[n] + 1));
+                weight++;
+            } else {
+                assignmentMatrix.add(tempMat.mul(0 - (cluster[n] + 1)));
+
+            }
+        }
+
+        let rhoip = new SparseMatrix(hamSize, hamSize);
+        assignmentMatrix.forEachNonZero((i, j, v) => {
+            if (v > 0) {
+                const row = V[j];
+                for (var k = 0; k < row.length; k++) {
+                    if (row[k] !== 0) {
+                        rhoip.set(i, k, rhoip.get(i, k) + row[k]);
+                    }
+                }
+            }
+            return v;
+        });
+
+        let rhoip2 = rhoip.clone();
+        assignmentMatrix.forEachNonZero((i, j, v) => {
+            if (v < 0) {
+                const row = V[j];
+                for (var k = 0; k < row.length; k++) {
+                    if (row[k] !== 0) {
+                        rhoip2.set(i, k, rhoip2.get(i, k) + row[k]);
+                    }
+                }
+            }
+            return v;
+        });
     }
 }
 
