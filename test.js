@@ -5,7 +5,7 @@ var request = require('request');
 
 const nmr = require('.');
 
-var molfile = "CCc1cccc(C)c1\nJME 2016-03-06 Thu May 19 17:27:10 GMT+200 2016\n\n  9  9  0  0  0  0  0  0  0  0999 V2000\n    3.6373    0.7000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n    3.6373    2.1000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n    2.4249    2.8000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n    1.2124    2.1000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n    1.2124    0.7000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n    2.4249    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n    4.8497    2.8000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n    6.0622    2.1000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n    0.0000    2.8000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n  1  2  1  0  0  0  0\n  2  3  2  0  0  0  0\n  3  4  1  0  0  0  0\n  4  5  2  0  0  0  0\n  5  6  1  0  0  0  0\n  6  1  2  0  0  0  0\n  2  7  1  0  0  0  0\n  7  8  1  0  0  0  0\n  4  9  1  0  0  0  0\nM  END\n";
+var molfile = "C=CCC(C)O\nJME 2016-03-06 Fri May 20 08:38:48 GMT+200 2016\n\n  6  5  0  0  0  0  0  0  0  0999 V2000\n    0.0000    4.2000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n    1.2124    3.5000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n    1.2124    2.1000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n    2.4248    1.4000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n    2.4248    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n    2.4248    4.2000    0.0000 O   0  0  0  0  0  0  0  0  0  0  0  0\n  1  2  1  0  0  0  0\n  2  3  1  0  0  0  0\n  3  4  1  0  0  0  0\n  4  5  2  0  0  0  0\n  2  6  1  0  0  0  0\nM  END\n";
 
 request.post("http://www.nmrdb.org/service/predictor",{form:{molfile:molfile}},function(error, response, body){
     var spinSystem = parseSpinusResult(body);
@@ -16,7 +16,7 @@ request.post("http://www.nmrdb.org/service/predictor",{form:{molfile:molfile}},f
         lineWidth: 1,
         nbPoints: 16384
     });
-    console.log(JSON.stringify(simulation));
+    //console.log(JSON.stringify(simulation));
 });
 
 function parseSpinusResult(body) {
@@ -32,10 +32,11 @@ function parseSpinusResult(body) {
         cs[i] = +tokens[2];
         ids[tokens[0] - 1] = i;
         integrals[i] = +tokens[5];//Is it always 1??
-
-
+    }
+    for (var i = 0; i < nspins; i++) {
+        tokens = lines[i].split('\t');
         var nCoup = (tokens.length - 4) / 3;
-        for (var j = 0; j < nCoup; j++) {
+        for (j = 0; j < nCoup; j++) {
             var withID = tokens[4 + 3 * j] - 1;
             var idx = ids[withID];
             var value = +tokens[6 + 3 * j];

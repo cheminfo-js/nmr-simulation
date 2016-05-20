@@ -14,11 +14,11 @@ function simulate1d(spinSystem, options = {}) {
     const to = (options.to || 10) * frequencyMHz;
     const lineWidth = options.lineWidth || 1;
     const nbPoints = options.nbPoints || 1024;
+    const maxClusterSize = options.maxClusterSize || 9;
 
     const chemicalShifts = spinSystem.chemicalShifts.slice();
-    const shift = 0;//(from + to) / 2;
     for (i = 0; i < chemicalShifts.length; i++) {
-        chemicalShifts[i] = chemicalShifts[i] * frequencyMHz + shift;
+        chemicalShifts[i] = chemicalShifts[i] * frequencyMHz;
     }
 
     let lineWidthPoints = (nbPoints * lineWidth / Math.abs(to - from));
@@ -36,6 +36,11 @@ function simulate1d(spinSystem, options = {}) {
     const multiplicity = spinSystem.multiplicity;
     for (var h = 0; h < spinSystem.clusters.length; h++) {
         const cluster = spinSystem.clusters[h];
+
+        if (cluster.length > maxClusterSize) {
+            throw new Error('too big cluster: ' + cluster.length);
+        }
+        
         var weight = 1;
         var sumI = 0;
         const frequencies = [];
@@ -110,7 +115,10 @@ function simulate1d(spinSystem, options = {}) {
                 return v;
             });
 
-            const tV = new SparseMatrix(V.transpose());
+            const tV = new SparseMatrix(V.transpose(), {
+                threshold: 1e-3
+            });
+
             rhoip = tV.mmul(rhoip);
             triuTimesAbs(rhoip, 1e-1);
             rhoip2 = tV.mmul(rhoip2);
