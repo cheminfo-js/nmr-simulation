@@ -1,6 +1,7 @@
 'use strict';
 
 const Matrix = require('ml-matrix');
+const newArray = require('new-array');
 
 class SpinSystem {
     constructor(chemicalShifts, couplingConstants, multiplicity) {
@@ -10,6 +11,38 @@ class SpinSystem {
         this.nSpins = chemicalShifts.length;
         this._initClusters();
         this._initConnectivity();
+    }
+
+    static fromSpinusPrediction(result) {
+        var lines = result.split('\n');
+        var nspins = lines.length - 1;
+        var cs = new Array(nspins);
+        var integrals = new Array(nspins);
+        var ids = {};
+        var jc = new Array(nspins);
+        for (let i = 0; i < nspins; i++) {
+            jc[i] = newArray(nspins, 0);
+            var tokens = lines[i].split('\t');
+            cs[i] = +tokens[2];
+            ids[tokens[0] - 1] = i;
+            integrals[i] = +tokens[5];//Is it always 1??
+        }
+        for (let i = 0; i < nspins; i++) {
+            tokens = lines[i].split('\t');
+            var nCoup = (tokens.length - 4) / 3;
+            for (j = 0; j < nCoup; j++) {
+                var withID = tokens[4 + 3 * j] - 1;
+                var idx = ids[withID];
+                jc[i][idx] = +tokens[6 + 3 * j];
+            }
+        }
+
+        for (var j = 0; j < nspins; j++) {
+            for (var i = j; i < nspins; i++) {
+                jc[j][i] = jc[i][j];
+            }
+        }
+        return new SpinSystem(cs, jc, newArray(nspins, 2));
     }
 
     _initClusters() {
