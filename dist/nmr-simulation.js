@@ -57,7 +57,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	'use strict';
 
 	exports.SpinSystem = __webpack_require__(1);
-	exports.simulate1D = __webpack_require__(11);
+	exports.simulate1D = __webpack_require__(12);
 
 
 /***/ },
@@ -67,6 +67,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	'use strict';
 
 	const Matrix = __webpack_require__(2);
+	const newArray = __webpack_require__(11);
 
 	class SpinSystem {
 	    constructor(chemicalShifts, couplingConstants, multiplicity) {
@@ -76,6 +77,38 @@ return /******/ (function(modules) { // webpackBootstrap
 	        this.nSpins = chemicalShifts.length;
 	        this._initClusters();
 	        this._initConnectivity();
+	    }
+
+	    static fromSpinusPrediction(result) {
+	        var lines = result.split('\n');
+	        var nspins = lines.length - 1;
+	        var cs = new Array(nspins);
+	        var integrals = new Array(nspins);
+	        var ids = {};
+	        var jc = new Array(nspins);
+	        for (let i = 0; i < nspins; i++) {
+	            jc[i] = newArray(nspins, 0);
+	            var tokens = lines[i].split('\t');
+	            cs[i] = +tokens[2];
+	            ids[tokens[0] - 1] = i;
+	            integrals[i] = +tokens[5];//Is it always 1??
+	        }
+	        for (let i = 0; i < nspins; i++) {
+	            tokens = lines[i].split('\t');
+	            var nCoup = (tokens.length - 4) / 3;
+	            for (j = 0; j < nCoup; j++) {
+	                var withID = tokens[4 + 3 * j] - 1;
+	                var idx = ids[withID];
+	                jc[i][idx] = +tokens[6 + 3 * j];
+	            }
+	        }
+
+	        for (var j = 0; j < nspins; j++) {
+	            for (var i = j; i < nspins; i++) {
+	                jc[j][i] = jc[i][j];
+	            }
+	        }
+	        return new SpinSystem(cs, jc, newArray(nspins, 2));
 	    }
 
 	    _initClusters() {
@@ -3325,14 +3358,30 @@ return /******/ (function(modules) { // webpackBootstrap
 
 /***/ },
 /* 11 */
+/***/ function(module, exports) {
+
+	module.exports = newArray
+
+	function newArray (n, value) {
+	  n = n || 0
+	  var array = new Array(n)
+	  for (var i = 0; i < n; i++) {
+	    array[i] = value
+	  }
+	  return array
+	}
+
+
+/***/ },
+/* 12 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
 	const Matrix = __webpack_require__(2);
-	const SparseMatrix = __webpack_require__(12);
+	const SparseMatrix = __webpack_require__(13);
 	const binarySearch = __webpack_require__(16);
-	const newArray = __webpack_require__(14);
+	const newArray = __webpack_require__(11);
 
 	const getPauli = __webpack_require__(17);
 
@@ -3343,11 +3392,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	    const to = (options.to || 10) * frequencyMHz;
 	    const lineWidth = options.lineWidth || 1;
 	    const nbPoints = options.nbPoints || 1024;
+	    const maxClusterSize = options.maxClusterSize || 10;
 
 	    const chemicalShifts = spinSystem.chemicalShifts.slice();
-	    const shift = 0;//(from + to) / 2;
 	    for (i = 0; i < chemicalShifts.length; i++) {
-	        chemicalShifts[i] = chemicalShifts[i] * frequencyMHz + shift;
+	        chemicalShifts[i] = chemicalShifts[i] * frequencyMHz;
 	    }
 
 	    let lineWidthPoints = (nbPoints * lineWidth / Math.abs(to - from));
@@ -3365,6 +3414,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	    const multiplicity = spinSystem.multiplicity;
 	    for (var h = 0; h < spinSystem.clusters.length; h++) {
 	        const cluster = spinSystem.clusters[h];
+
+	        if (cluster.length > maxClusterSize) {
+	            throw new Error('too big cluster: ' + cluster.length);
+	        }
+	        
 	        var weight = 1;
 	        var sumI = 0;
 	        const frequencies = [];
@@ -3411,9 +3465,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	                }
 	            }
 
-	            let rhoip = new SparseMatrix(hamSize, hamSize, {
-	                threshold: 1e-3
-	            });
+	            let rhoip = Matrix.zeros(hamSize, hamSize);
 	            assignmentMatrix.forEachNonZero((i, j, v) => {
 	                if (v > 0) {
 	                    const row = V[j];
@@ -3439,10 +3491,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	                return v;
 	            });
 
-	            const tV = new SparseMatrix(V.transpose());
+	            const tV = V.transpose();
 	            rhoip = tV.mmul(rhoip);
+	            rhoip = new SparseMatrix(rhoip, {threshold: 1e-1});
 	            triuTimesAbs(rhoip, 1e-1);
 	            rhoip2 = tV.mmul(rhoip2);
+	            rhoip2 = new SparseMatrix(rhoip2, {threshold: 1e-1});
 	            triuTimesAbs(rhoip2, 1e-1);
 
 	            rhoip2.forEachNonZero((i, j, v) => {
@@ -3573,10 +3627,10 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 12 */
+/* 13 */
 /***/ function(module, exports, __webpack_require__) {
 
-	const HashTable = __webpack_require__(13);
+	const HashTable = __webpack_require__(14);
 
 	class SparseMatrix {
 	    constructor(rows, columns, options = {}) {
@@ -3871,12 +3925,12 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 13 */
+/* 14 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	const newArray = __webpack_require__(14);
+	const newArray = __webpack_require__(11);
 
 	const primeFinder = __webpack_require__(15);
 	const nextPrime = primeFinder.nextPrime;
@@ -4180,22 +4234,6 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 14 */
-/***/ function(module, exports) {
-
-	module.exports = newArray
-
-	function newArray (n, value) {
-	  n = n || 0
-	  var array = new Array(n)
-	  for (var i = 0; i < n; i++) {
-	    array[i] = value
-	  }
-	  return array
-	}
-
-
-/***/ },
 /* 15 */
 /***/ function(module, exports, __webpack_require__) {
 
@@ -4324,7 +4362,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	'use strict';
 
-	const SparseMatrix = __webpack_require__(12);
+	const SparseMatrix = __webpack_require__(13);
 
 	function createPauli(mult) {
 	    const spin = (mult - 1) / 2;
