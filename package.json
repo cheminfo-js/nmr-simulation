@@ -1,12 +1,13 @@
 {
   "name": "nmr-simulation",
   "version": "0.0.0",
-  "description": "",
+  "description": "Simulate NMR spectra from spin systems",
   "main": "src/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "cheminfo build --no-uglify"
   },
+  "files": ["src"],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/cheminfo-js/nmr-simulation.git"
