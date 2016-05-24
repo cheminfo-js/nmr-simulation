@@ -145,7 +145,7 @@ function simulate1d(spinSystem, options = {}) {
             let valFreq = frequencies[0];
             let inte = intensities[0];
             let count = 1;
-            for (i = 0; i < numFreq; i++) {
+            for (i = 1; i < numFreq; i++) {
                 if (Math.abs(frequencies[i] - valFreq / count) < diff) {
                     inte += intensities[i];
                     valFreq += frequencies[i];
