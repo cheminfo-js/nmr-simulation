@@ -14,7 +14,7 @@ function simulate1d(spinSystem, options = {}) {
     const to = (options.to || 10) * frequencyMHz;
     const lineWidth = options.lineWidth || 1;
     const nbPoints = options.nbPoints || 1024;
-    const maxClusterSize = options.maxClusterSize || 9;
+    const maxClusterSize = options.maxClusterSize || 10;
 
     const chemicalShifts = spinSystem.chemicalShifts.slice();
     for (i = 0; i < chemicalShifts.length; i++) {
@@ -87,9 +87,7 @@ function simulate1d(spinSystem, options = {}) {
                 }
             }
 
-            let rhoip = new SparseMatrix(hamSize, hamSize, {
-                threshold: 1e-3
-            });
+            let rhoip = Matrix.zeros(hamSize, hamSize);
             assignmentMatrix.forEachNonZero((i, j, v) => {
                 if (v > 0) {
                     const row = V[j];
@@ -115,13 +113,12 @@ function simulate1d(spinSystem, options = {}) {
                 return v;
             });
 
-            const tV = new SparseMatrix(V.transpose(), {
-                threshold: 1e-3
-            });
-
+            const tV = V.transpose();
             rhoip = tV.mmul(rhoip);
+            rhoip = new SparseMatrix(rhoip, {threshold: 1e-1});
             triuTimesAbs(rhoip, 1e-1);
             rhoip2 = tV.mmul(rhoip2);
+            rhoip2 = new SparseMatrix(rhoip2, {threshold: 1e-1});
             triuTimesAbs(rhoip2, 1e-1);
 
             rhoip2.forEachNonZero((i, j, v) => {
