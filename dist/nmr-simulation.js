@@ -3399,14 +3399,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	        chemicalShifts[i] = chemicalShifts[i] * frequencyMHz;
 	    }
 
-	    let lineWidthPoints = (nbPoints * lineWidth / Math.abs(to - from));
+	    let lineWidthPoints = (nbPoints * lineWidth / Math.abs(to - from)) / 2.355;
 	    let lnPoints = lineWidthPoints * 50;
-	    lineWidthPoints = Math.pow(lineWidthPoints / 2, 2);
 
-	    const lorentzianLength = lnPoints | 0;
-	    const lorentzian = new Array(lorentzianLength);
-	    for (i = 0; i < lorentzianLength; i++) {
-	        lorentzian[i] = 1e12 * lineWidthPoints / (Math.pow(i - lnPoints / 2, 2) + lineWidthPoints);
+	    const gaussianLength = lnPoints | 0;
+	    const gaussian = new Array(gaussianLength);
+	    const b = lnPoints / 2;
+	    const c = lineWidthPoints * lineWidthPoints * 2;
+	    for (i = 0; i < gaussianLength; i++) {
+	        gaussian[i] = 1e12 * Math.exp(-((i - b) * (i - b)) / c);
 	    }
 
 	    const result = new newArray(nbPoints, 0);
