@@ -152,28 +152,28 @@ function simulate1d(spinSystem, options = {}) {
                     valFreq += frequencies[i];
                     count++;
                 } else {
-                    addPeak(result, valFreq / count, inte * weight, from, to, nbPoints, lorentzian);
+                    addPeak(result, valFreq / count, inte * weight, from, to, nbPoints, gaussian);
                     valFreq = frequencies[i];
                     inte = intensities[i];
                     count = 1;
                 }
             }
-            addPeak(result, valFreq / count, inte * weight, from, to, nbPoints, lorentzian);
+            addPeak(result, valFreq / count, inte * weight, from, to, nbPoints, gaussian);
         }
     }
 
     return result;
 }
 
-function addPeak(result, freq, height, from, to, nbPoints, lorentzian) {
+function addPeak(result, freq, height, from, to, nbPoints, gaussian) {
     const center = (nbPoints * (-freq-from) / (to - from)) | 0;
-    const lnPoints = lorentzian.length;
+    const lnPoints = gaussian.length;
     var index = 0;
     var indexLorentz = 0;
     for (var i = center - lnPoints / 2; i < center + lnPoints / 2; i++) {
         index = i | 0;
         if (i >= 0 && i < nbPoints) {
-            result[index] = result[index] + lorentzian[indexLorentz] * height;
+            result[index] = result[index] + gaussian[indexLorentz] * height;
         }
         indexLorentz++;
     }
