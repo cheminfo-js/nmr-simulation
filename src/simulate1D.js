@@ -7,7 +7,7 @@ const newArray = require('new-array');
 
 const getPauli = require('./pauli');
 
-function simulate1d(spinSystem, options = {}) {
+function simulate1d(spinSystem, options) {
     var i;
     const frequencyMHz = (options.frequency || 400);
     const from = (options.from || 0) * frequencyMHz;

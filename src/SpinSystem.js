@@ -2,15 +2,20 @@
 
 const Matrix = require('ml-matrix');
 const newArray = require('new-array');
+const simpleClustering = require('ml-simple-clustering');
+const defaultOptions = {};
+const DEBUG = true;
 
 class SpinSystem {
-    constructor(chemicalShifts, couplingConstants, multiplicity) {
+    constructor(chemicalShifts, couplingConstants, multiplicity, options) {
         this.chemicalShifts = chemicalShifts;
         this.couplingConstants = couplingConstants;
         this.multiplicity = multiplicity;
         this.nSpins = chemicalShifts.length;
-        this._initClusters();
+        this.maxClusterSize = 8;
         this._initConnectivity();
+        this._initClusters();
+        //this._ensureClusterSize();
     }
 
     static fromSpinusPrediction(result) {
@@ -19,9 +24,8 @@ class SpinSystem {
         var cs = new Array(nspins);
         var integrals = new Array(nspins);
         var ids = {};
-        var jc = new Array(nspins);
+        var jc = Matrix.zeros(nspins, nspins);
         for (let i = 0; i < nspins; i++) {
-            jc[i] = newArray(nspins, 0);
             var tokens = lines[i].split('\t');
             cs[i] = +tokens[2];
             ids[tokens[0] - 1] = i;
@@ -46,12 +50,7 @@ class SpinSystem {
     }
 
     _initClusters() {
-        const n = this.chemicalShifts.length;
-        const cluster = new Array(n);
-        for (var i = 0; i < n; i++) {
-            cluster[i] = i;
-        }
-        this.clusters = [cluster];
+        this.clusters = simpleClustering(this.connectivity);
     }
 
     _initConnectivity() {
@@ -67,6 +66,47 @@ class SpinSystem {
         }
         this.connectivity = connectivity;
     }
+    _ensureClusterSize(){
+        var betas = this._calculateBetas(this.couplingConstants);
+        if( DEBUG ) console.log(betas);
+        var finalClusterList = [];
+        var cluster, subClusters;
+        for( cluster of this.clusters){
+            if(cluster.length>this.maxClusterSize){
+                subClusters = this._splitCluster(cluster, betas);
+            }
+            else{
+                finalClusterList.push(cluster);
+            }
+        }
+        this.clusters = finalClusterList;
+    }
+
+
+    _calculateBetas(J){
+        var betas = Matrix.zeros(J.length, J.length);
+        //Before clustering, we must add hidden J, we could use molecular information if available
+        var i,j;
+        for( i=0;i<J.rows;i++){
+            for( j=i;j<J.columns;j++){
+                if((this.chemicalShifts[i]-this.chemicalShifts[j])!=0){
+                    betas[i][j] = 1 - Math.abs(J[i][j]/(this.chemicalShifts[i]-this.chemicalShifts[j]));
+                    betas[j][i] = betas[i][j];
+                }
+                else if( !(i == j || J[i][j] !== 0) ){
+                        betas[i][j] = 1;
+                        betas[j][i] = 1;
+                    }
+            }
+        }
+        return betas;
+    }
+
+    _splitCluster(cluster, betas){
+
+    }
+
+
 }
 
 module.exports = SpinSystem;
