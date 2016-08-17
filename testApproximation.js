@@ -56,5 +56,5 @@ var body = `7	1	0.880	2	10	2	7.118	11	2	7.118
     console.time('simulate');
     var simulation = nmr.simulate1D(spinSystem, options);
     console.timeEnd('simulate');
-    //console.log(JSON.stringify(simulation));
+    console.log(JSON.stringify(simulation));
 //});
