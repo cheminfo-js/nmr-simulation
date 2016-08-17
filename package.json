@@ -34,7 +34,7 @@
     "ml-sparse-matrix": "^0.2.1",
     "new-array": "^1.0.0",
     "ml-simple-clustering":"0.1.0",
-    "ml-hclust":"1.0.0"
+    "ml-hclust":"1.1.0"
   },
   "devDependencies": {
     "cheminfo-tools": "^1.3.4",

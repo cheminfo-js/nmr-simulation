@@ -7,6 +7,8 @@ const newArray = require('new-array');
 
 const getPauli = require('./pauli');
 
+const DEBUG = true;
+
 function simulate1d(spinSystem, options) {
     var i;
     const frequencyMHz = (options.frequency || 400);
@@ -22,7 +24,7 @@ function simulate1d(spinSystem, options) {
     }
 
     let lineWidthPoints = (nbPoints * lineWidth / Math.abs(to - from)) / 2.355;
-    let lnPoints = lineWidthPoints * 50;
+    let lnPoints = lineWidthPoints * 20;
 
     const gaussianLength = lnPoints | 0;
     const gaussian = new Array(gaussianLength);
@@ -37,6 +39,11 @@ function simulate1d(spinSystem, options) {
     const multiplicity = spinSystem.multiplicity;
     for (var h = 0; h < spinSystem.clusters.length; h++) {
         const cluster = spinSystem.clusters[h];
+
+        var clusterFake = new Array(cluster.length);
+        for (var i = 0; i < cluster.length; i++) {
+            clusterFake[i] = cluster[i]<0?-cluster[i]-1:cluster[i];
+        }
 
         if (cluster.length > maxClusterSize) {
             throw new Error('too big cluster: ' + cluster.length);
@@ -54,7 +61,7 @@ function simulate1d(spinSystem, options) {
                 spinSystem.couplingConstants,
                 multiplicity,
                 spinSystem.connectivity,
-                cluster
+                clusterFake
             );
 
             const hamSize = hamiltonian.rows;
@@ -65,17 +72,17 @@ function simulate1d(spinSystem, options) {
             const multLen = cluster.length;
             weight = 0;
             for (var n = 0; n < multLen; n++) {
-                const L = getPauli(multiplicity[cluster[n]]);
+                const L = getPauli(multiplicity[clusterFake[n]]);
 
                 let temp = 1;
                 for (var j = 0; j < n; j++) {
-                    temp *= multiplicity[cluster[j]];
+                    temp *= multiplicity[clusterFake[j]];
                 }
                 const A = SparseMatrix.eye(temp);
 
                 temp = 1;
                 for (j = n + 1; j < multLen; j++) {
-                    temp *= multiplicity[cluster[j]];
+                    temp *= multiplicity[clusterFake[j]];
                 }
                 const B = SparseMatrix.eye(temp);
                 const tempMat = A.kroneckerProduct(L.m).kroneckerProduct(B);
@@ -161,7 +168,7 @@ function simulate1d(spinSystem, options) {
             addPeak(result, valFreq / count, inte * weight, from, to, nbPoints, gaussian);
         }
     }
-
+    console.log(JSON.stringify(result));
     return result;
 }
 
@@ -193,10 +200,13 @@ function getHamiltonian(chemicalShifts, couplingConstants, multiplicity, conMatr
         hamSize *= multiplicity[cluster[i]];
     }
 
+    if(DEBUG) console.log("Hamiltonian size: "+hamSize);
+
     const clusterHam = new SparseMatrix(hamSize, hamSize);
 
     for (var pos = 0; pos < cluster.length; pos++) {
-        const n = cluster[pos];
+        var n = cluster[pos];
+
         const L = getPauli(multiplicity[n]);
 
         let A1, B1;
