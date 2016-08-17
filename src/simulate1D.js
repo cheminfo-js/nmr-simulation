@@ -7,10 +7,11 @@ const newArray = require('new-array');
 
 const getPauli = require('./pauli');
 
-const DEBUG = true;
+const DEBUG = false;
+const smallValue = 1e-2;
 
 function simulate1d(spinSystem, options) {
-    var i;
+    var i, j;
     const frequencyMHz = (options.frequency || 400);
     const from = (options.from || 0) * frequencyMHz;
     const to = (options.to || 10) * frequencyMHz;
@@ -41,20 +42,42 @@ function simulate1d(spinSystem, options) {
         const cluster = spinSystem.clusters[h];
 
         var clusterFake = new Array(cluster.length);
-        for (var i = 0; i < cluster.length; i++) {
+        for (i = 0; i < cluster.length; i++) {
             clusterFake[i] = cluster[i]<0?-cluster[i]-1:cluster[i];
         }
 
-        if (cluster.length > maxClusterSize) {
-            throw new Error('too big cluster: ' + cluster.length);
-        }
-        
         var weight = 1;
         var sumI = 0;
         const frequencies = [];
         const intensities = [];
-        if (false) {
-            // if(tnonZeros.contains(2)){
+        if (cluster.length>maxClusterSize) {
+            //This is a single spin, but the cluster exceeds the maxClusterSize criteria
+            //we use the simple multiplicity algorithm
+            //Add the central peak. It will be split with every single J coupling.
+            var index  = 0;
+            while (cluster[index++]<0);
+            index = cluster[index-1];
+            var currentSize, jc;
+            frequencies.push(-chemicalShifts[index]);
+            for (i = 0;i < cluster.length; i++) {
+                if (cluster[i] < 0) {
+                    jc = spinSystem.couplingConstants[index][clusterFake[i]];
+                    currentSize = frequencies.length;
+                    for ( j=0 ; j < currentSize; j++) {
+                        frequencies.push(frequencies[j] + jc);
+                        frequencies[j] -= jc;
+                    }
+                }
+            }
+
+            frequencies.sort();
+            sumI=frequencies.length;
+            weight=1;
+
+            for (i=0;i<sumI;i++){
+                intensities.push(1);
+            }
+
         } else {
             const hamiltonian = getHamiltonian(
                 chemicalShifts,
@@ -75,7 +98,7 @@ function simulate1d(spinSystem, options) {
                 const L = getPauli(multiplicity[clusterFake[n]]);
 
                 let temp = 1;
-                for (var j = 0; j < n; j++) {
+                for (j = 0; j < n; j++) {
                     temp *= multiplicity[clusterFake[j]];
                 }
                 const A = SparseMatrix.eye(temp);
@@ -90,8 +113,7 @@ function simulate1d(spinSystem, options) {
                     assignmentMatrix.add(tempMat.mul(cluster[n] + 1));
                     weight++;
                 } else {
-                    assignmentMatrix.add(tempMat.mul(0 - (cluster[n] + 1)));
-
+                    assignmentMatrix.add(tempMat.mul(cluster[n]));
                 }
             }
 
@@ -123,11 +145,11 @@ function simulate1d(spinSystem, options) {
 
             const tV = V.transpose();
             rhoip = tV.mmul(rhoip);
-            rhoip = new SparseMatrix(rhoip, {threshold: 1e-1});
-            triuTimesAbs(rhoip, 1e-1);
+            rhoip = new SparseMatrix(rhoip, {threshold: smallValue});
+            triuTimesAbs(rhoip, smallValue);
             rhoip2 = tV.mmul(rhoip2);
-            rhoip2 = new SparseMatrix(rhoip2, {threshold: 1e-1});
-            triuTimesAbs(rhoip2, 1e-1);
+            rhoip2 = new SparseMatrix(rhoip2, {threshold: smallValue});
+            triuTimesAbs(rhoip2, smallValue);
 
             rhoip2.forEachNonZero((i, j, v) => {
                 var val = rhoip.get(i, j);
@@ -145,11 +167,11 @@ function simulate1d(spinSystem, options) {
                 }
             });
         }
-
         const numFreq = frequencies.length;
+        //console.log("New Spin");
         if (numFreq > 0) {
             weight = weight / sumI;
-            const diff = lineWidth / 16;
+            const diff = lineWidth / 32;
             let valFreq = frequencies[0];
             let inte = intensities[0];
             let count = 1;
@@ -168,11 +190,12 @@ function simulate1d(spinSystem, options) {
             addPeak(result, valFreq / count, inte * weight, from, to, nbPoints, gaussian);
         }
     }
-    console.log(JSON.stringify(result));
+    //console.log(JSON.stringify(result));
     return result;
 }
 
 function addPeak(result, freq, height, from, to, nbPoints, gaussian) {
+    //console.log(freq, height)
     const center = (nbPoints * (-freq-from) / (to - from)) | 0;
     const lnPoints = gaussian.length;
     var index = 0;

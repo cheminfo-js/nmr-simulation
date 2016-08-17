@@ -30,9 +30,9 @@ var body = `7	1	0.880	2	10	2	7.118	11	2	7.118
 9	1	0.880	2	10	2	7.118	11	2	7.118
 10	2	1.351	5	7	1	7.118	8	1	7.118	9	1	7.118	12	3	6.915	13	3	6.915
 11	2	1.351	5	7	1	7.118	8	1	7.118	9	1	7.118	12	3	6.915	13	3	6.915
-12	3	1.457	3	10	2	6.915	11	2	6.915	14	4	5.837
-13	3	1.457	3	10	2	6.915	11	2	6.915	14	4	5.837
-14	4	3.616	5	12	3	5.837	13	3	5.837	15	5	6.163	16	5	6.163	17	5	6.163
+12	3	1.457	3	10	2	6.915	11	2	6.915	14	4	6.163
+13	3	1.457	3	10	2	6.915	11	2	6.915	14	4	6.163
+14	4	3.616	5	12	3	6.163	13	3	6.163	15	5	6.163	16	5	6.163	17	5	6.163
 15	5	1.183	1	14	4	6.163
 16	5	1.183	1	14	4	6.163
 17	5	1.183	1	14	4	6.163
@@ -40,6 +40,7 @@ var body = `7	1	0.880	2	10	2	7.118	11	2	7.118
 
 //request.post("http://www.nmrdb.org/service/predictor",{form:{molfile:molfile}},function(error, response, body){
     var spinSystem = nmr.SpinSystem.fromSpinusPrediction(body);
+    //console.log(spinSystem);
     //console.log(body.replace(/\t/g,"\\t"));
     var options = {
         frequency: 400.082470657773,
@@ -47,7 +48,7 @@ var body = `7	1	0.880	2	10	2	7.118	11	2	7.118
         to: 10,
         lineWidth: 1.25,
         nbPoints: 16*1024,//16384,
-        maxClusterSize: 8
+        maxClusterSize: 5
     }
     spinSystem.ensureClusterZise(options);
     //console.log(spinSystem);

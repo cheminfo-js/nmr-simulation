@@ -4,7 +4,7 @@ const Matrix = require('ml-matrix');
 const newArray = require('new-array');
 const simpleClustering = require('ml-simple-clustering');
 const hlClust = require("ml-hclust");
-const DEBUG = true;
+const DEBUG = false;
 
 class SpinSystem {
     constructor(chemicalShifts, couplingConstants, multiplicity) {
@@ -35,7 +35,7 @@ class SpinSystem {
             for (j = 0; j < nCoup; j++) {
                 var withID = tokens[4 + 3 * j] - 1;
                 var idx = ids[withID];
-                jc[i][idx] = +tokens[6 + 3 * j]/2;
+                jc[i][idx] = (+tokens[6 + 3 * j])/2;
             }
         }
 
@@ -105,6 +105,11 @@ class SpinSystem {
                         this.clusters[j].push(i);
                 }
             }
+        }
+        if(DEBUG){
+            console.log("Cluster list");
+            console.log(this.clusters);
+
         }
     }
 
