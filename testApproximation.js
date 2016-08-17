@@ -47,8 +47,9 @@ var body = `7	1	0.880	2	10	2	7.118	11	2	7.118
         from: 0,
         to: 10,
         lineWidth: 1.25,
-        nbPoints: 16*1024,//16384,
-        maxClusterSize: 5
+        nbPoints: 4*1024,//16384,
+        maxClusterSize: 5,
+        output:"xy"
     }
     spinSystem.ensureClusterZise(options);
     //console.log(spinSystem);

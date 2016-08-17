@@ -18,6 +18,7 @@ function simulate1d(spinSystem, options) {
     const lineWidth = options.lineWidth || 1;
     const nbPoints = options.nbPoints || 1024;
     const maxClusterSize = options.maxClusterSize || 10;
+    const output = options.output || "y";
 
     const chemicalShifts = spinSystem.chemicalShifts.slice();
     for (i = 0; i < chemicalShifts.length; i++) {
@@ -190,8 +191,10 @@ function simulate1d(spinSystem, options) {
             addPeak(result, valFreq / count, inte * weight, from, to, nbPoints, gaussian);
         }
     }
-    //console.log(JSON.stringify(result));
-    return result;
+    if(output==="xy")
+        return {x:x,y:result};
+    if(output == "y")
+        return result;
 }
 
 function addPeak(result, freq, height, from, to, nbPoints, gaussian) {
@@ -277,6 +280,15 @@ function getHamiltonian(chemicalShifts, couplingConstants, multiplicity, conMatr
     }
 
     return clusterHam;
+}
+
+function _getX(from, to, nbPoints){
+    const x = new Array(nbPoints);
+    const dx = (to-from)/(nbPoints-1);
+    for (var i = 0 ; i < nbPoints; i++) {
+        x[i]=from+i*dx;
+    }
+    return x;
 }
 
 module.exports = simulate1d;
