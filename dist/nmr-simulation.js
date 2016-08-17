@@ -7180,7 +7180,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        }
 	    }
 	    if(output==="xy")
-	        return {x:_getX(from, to, nbPoints),y:result};
+	        return {x:_getX(options.from, options.to, nbPoints),y:result};
 	    if(output == "y")
 	        return result;
 	}
