@@ -1,8 +1,8 @@
 'use strict';
 
-var request = require('request');
-
+const request = require('request');
 const nmr = require('.');
+const NmrPredictor = new require("nmr-predictor");
 
 var molfile = 
 `CCCC(C)O
@@ -24,8 +24,9 @@ M  END
 `;
 
 request.post("http://www.nmrdb.org/service/predictor",{form:{molfile:molfile}},function(error, response, body){
-    var spinSystem = nmr.SpinSystem.fromSpinusPrediction(body);
-    console.log(spinSystem);
+    const predictor = new NmrPredictor("spinus");
+    const prediction = predictor.predict(molfile, body);
+    const spinSystem = nmr.SpinSystem.fromPrediction(prediction);    console.log(spinSystem);
     console.time('simulate');
     var simulation = nmr.simulate1D(spinSystem, {
         frequency: 400.082470657773,

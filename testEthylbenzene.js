@@ -3,9 +3,10 @@
  */
 'use strict';
 
-var request = require('request');
-
+const request = require('request');
 const nmr = require('.');
+const NmrPredictor = new require("nmr-predictor");
+
 
 var molfile = `Benzene, ethyl-, ID: C100414
   NIST    16081116462D 1   1.00000     0.00000
@@ -30,6 +31,7 @@ Copyright by the U.S. Sec. Commerce on behalf of U.S.A. All rights reserved.
 M  END
 `;
 
+
 var body = `9	1	7.260	4	14	6	3.507	15	7	0.000	10	2	7.718	11	3	7.758
 10	2	7.196	4	9	1	7.718	11	3	1.292	14	6	1.293	15	7	7.718
 11	3	7.162	4	9	1	7.758	10	2	1.292	15	7	3.524	14	6	0.000
@@ -43,9 +45,10 @@ var body = `9	1	7.260	4	14	6	3.507	15	7	0.000	10	2	7.718	11	3	7.758
 `;
 
 //request.post("http://www.nmrdb.org/service/predictor",{form:{molfile:molfile}},function(error, response, body){
-    var spinSystem = nmr.SpinSystem.fromSpinusPrediction(body);
-console.log(spinSystem);
-    //console.log(body.replace(/	/g,"\	"));
+    const predictor = new NmrPredictor("spinus");
+    const prediction = predictor.predict(molfile, body);
+    const spinSystem = nmr.SpinSystem.fromPrediction(prediction);
+    console.log(spinSystem);
     var options = {
         frequency: 400.082470657773,
         from: 0,
@@ -54,7 +57,7 @@ console.log(spinSystem);
         nbPoints: 16384,
         maxClusterSize: 8
     }
-    spinSystem.ensureClusterZise(options);
+    spinSystem.ensureClusterSize(options);
     //console.log(spinSystem);
     console.time('simulate');
     var simulation = nmr.simulate1D(spinSystem, options);

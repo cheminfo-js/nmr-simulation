@@ -3,9 +3,9 @@
  */
 'use strict';
 
-var request = require('request');
-
+const request = require('request');
 const nmr = require('.');
+const NmrPredictor = new require("nmr-predictor");
 
 var molfile = `ethylvinylether.mol
 
@@ -35,7 +35,9 @@ var body = `6	1	4.738	2	8	2	7.597	7	1	2.264
 `;
 
 //request.post("http://www.nmrdb.org/service/predictor",{form:{molfile:molfile}},function(error, response, body){
-    var spinSystem = nmr.SpinSystem.fromSpinusPrediction(body);
+    const predictor = new NmrPredictor("spinus");
+    const prediction = predictor.predict(molfile, body);
+    const spinSystem = nmr.SpinSystem.fromPrediction(prediction);
     //console.log(body.replace(/\t/g,"\\t"));
     var options = {
         frequency: 400.082470657773,
@@ -46,7 +48,7 @@ var body = `6	1	4.738	2	8	2	7.597	7	1	2.264
         maxClusterSize: 6
     };
 
-    spinSystem.ensureClusterZise(options);
+    spinSystem.ensureClusterSize(options);
     console.log(spinSystem);
     console.time('simulate');
     var simulation = nmr.simulate1D(spinSystem, options);

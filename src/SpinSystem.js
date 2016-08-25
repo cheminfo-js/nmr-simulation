@@ -16,39 +16,33 @@ class SpinSystem {
         this._initClusters();
     }
 
-    static fromSpinusPrediction(result) {
-        var lines = result.split('\n');
-        var nspins = lines.length - 1;
-        var cs = new Array(nspins);
-        var integrals = new Array(nspins);
-        var ids = {};
-        var jc = Matrix.zeros(nspins, nspins);
-        for (let i = 0; i < nspins; i++) {
-            var tokens = lines[i].split('\t');
-            cs[i] = +tokens[2];
-            ids[tokens[0] - 1] = i;
-            integrals[i] = +tokens[5];//Is it always 1??
+    static fromPrediction(result) {
+        const nSpins = result.length;
+        const cs = new Array(nSpins);
+        const jc = Matrix.zeros(nSpins, nSpins);
+        const multiplicity = new Array(nSpins);
+        const ids = {};
+        var i,k,j;
+        for(i=0;i<nSpins;i++) {
+            cs[i] = result[i].delta;
+            ids[result[i].atomIDs[0]] = i;
         }
-        for (let i = 0; i < nspins; i++) {
-            tokens = lines[i].split('\t');
-            var nCoup = (tokens.length - 4) / 3;
-            for (j = 0; j < nCoup; j++) {
-                var withID = tokens[4 + 3 * j] - 1;
-                var idx = ids[withID];
-                jc[i][idx] = (+tokens[6 + 3 * j])/2;
+        for( i = 0; i < nSpins; i++) {
+            cs[i] = result[i].delta;
+            j = result[i].j;
+            for( k = 0; k < j.length; k++) {
+                console.log(ids[result[i].atomIDs[0]],ids[j[k].assignment]);
+                jc[ids[result[i].atomIDs[0]]][ids[j[k].assignment]] = j[k].coupling;
+                jc[ids[j[k].assignment]][ids[result[i].atomIDs[0]]] = j[k].coupling;
             }
+            multiplicity[i] = result[i].integral+1;
         }
 
-        for (var j = 0; j < nspins; j++) {
-            for (var i = j; i < nspins; i++) {
-                jc[j][i] = jc[i][j];
-            }
-        }
-        return new SpinSystem(cs, jc, newArray(nspins, 2));
+        return new SpinSystem(cs, jc, multiplicity);
     }
 
     _initClusters() {
-        this.clusters = simpleClustering(this.connectivity,{out:"indexes"});
+        this.clusters = simpleClustering(this.connectivity, {out:"indexes"});
     }
 
     _initConnectivity() {
@@ -85,7 +79,7 @@ class SpinSystem {
         return betas;
     }
 
-    ensureClusterZise(options){
+    ensureClusterSize(options){
         var betas = this._calculateBetas(this.couplingConstants, options.frequency||400);
         var cluster = hlClust.agnes(betas, {isDistanceMatrix:true});
         var list = [];

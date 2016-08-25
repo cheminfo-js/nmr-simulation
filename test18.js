@@ -7,21 +7,25 @@ const request = require('request');
 const nmr = require('.');
 const NmrPredictor = new require("nmr-predictor");
 
-var molfile = `CCCC(C)O
-JME 2016-03-06 Tue Aug 16 14:43:07 GMT-500 2016
+var molfile = `CC(C)C(C)C(C)C
+JME 2016-03-06 Mon Aug 22 08:46:01 GMT-500 2016
 
-6  5  0  0  0  0  0  0  0  0999 V2000
-0.0000    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
-1.2124    0.7000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
-2.4248    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
-3.6373    0.7000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
-4.8497    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
-3.6373    2.1000    0.0000 O   0  0  0  0  0  0  0  0  0  0  0  0
-1  2  1  0  0  0  0
-2  3  1  0  0  0  0
-3  4  1  0  0  0  0
-4  5  1  0  0  0  0
-4  6  1  0  0  0  0
+  8  7  0  0  0  0  0  0  0  0999 V2000
+    0.0000    1.4000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+    1.2124    2.1000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+    2.4248    1.4000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+    3.6373    2.1000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+    4.8497    1.4000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+    2.4249    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+    3.6373    3.5000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+    1.2124    3.5000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+  1  2  1  0  0  0  0
+  2  3  1  0  0  0  0
+  3  4  1  0  0  0  0
+  4  5  1  0  0  0  0
+  3  6  1  0  0  0  0
+  4  7  1  0  0  0  0
+  2  8  1  0  0  0  0
 M  END
 `;
 
@@ -41,8 +45,7 @@ var body = `7	1	0.880	2	10	2	7.118	11	2	7.118
 //request.post("http://www.nmrdb.org/service/predictor",{form:{molfile:molfile}},function(error, response, body){
     const predictor = new NmrPredictor("spinus");
     const prediction = predictor.predict(molfile, body);
-    const spinSystem = nmr.SpinSystem.fromPrediction(prediction);
-    //console.log(spinSystem);
+    const spinSystem = nmr.SpinSystem.fromPrediction(prediction);    //console.log(spinSystem);
     //console.log(body.replace(/\t/g,"\\t"));
     var options = {
         frequency: 400.082470657773,
@@ -50,7 +53,7 @@ var body = `7	1	0.880	2	10	2	7.118	11	2	7.118
         to: 10,
         lineWidth: 1.25,
         nbPoints: 16*1024,//16384,
-        maxClusterSize: 15,
+        maxClusterSize: 6,
         output:"xy"
     }
     //spinSystem.ensureClusterSize(options);

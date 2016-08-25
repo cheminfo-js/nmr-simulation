@@ -38,6 +38,7 @@
   },
   "devDependencies": {
     "cheminfo-tools": "^1.3.4",
-    "request": "2.72.0"
+    "request": "2.72.0",
+    "nmr-predictor":"0.0.1"
   }
 }
