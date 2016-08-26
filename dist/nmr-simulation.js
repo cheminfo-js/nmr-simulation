@@ -101,7 +101,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	            for (j = 0; j < nCoup; j++) {
 	                var withID = tokens[4 + 3 * j] - 1;
 	                var idx = ids[withID];
-	                jc[i][idx] = (+tokens[6 + 3 * j])/2;
+	                jc[i][idx] = +tokens[6 + 3 * j]/2;
 	            }
 	        }
 
@@ -113,8 +113,33 @@ return /******/ (function(modules) { // webpackBootstrap
 	        return new SpinSystem(cs, jc, newArray(nspins, 2));
 	    }
 
+	    static fromPrediction(result) {
+	        const nSpins = result.length;
+	        const cs = new Array(nSpins);
+	        const jc = Matrix.zeros(nSpins, nSpins);
+	        const multiplicity = new Array(nSpins);
+	        const ids = {};
+	        var i,k,j;
+	        for(i=0;i<nSpins;i++) {
+	            cs[i] = result[i].delta;
+	            ids[result[i].atomIDs[0]] = i;
+	        }
+	        for( i = 0; i < nSpins; i++) {
+	            cs[i] = result[i].delta;
+	            j = result[i].j;
+	            for( k = 0; k < j.length; k++) {
+	                //console.log(ids[result[i].atomIDs[0]],ids[j[k].assignment]);
+	                jc[ids[result[i].atomIDs[0]]][ids[j[k].assignment]] = j[k].coupling;
+	                jc[ids[j[k].assignment]][ids[result[i].atomIDs[0]]] = j[k].coupling;
+	            }
+	            multiplicity[i] = result[i].integral+1;
+	        }
+
+	        return new SpinSystem(cs, jc, multiplicity);
+	    }
+
 	    _initClusters() {
-	        this.clusters = simpleClustering(this.connectivity,{out:"indexes"});
+	        this.clusters = simpleClustering(this.connectivity, {out:"indexes"});
 	    }
 
 	    _initConnectivity() {
@@ -151,7 +176,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        return betas;
 	    }
 
-	    ensureClusterZise(options){
+	    ensureClusterSize(options){
 	        var betas = this._calculateBetas(this.couplingConstants, options.frequency||400);
 	        var cluster = hlClust.agnes(betas, {isDistanceMatrix:true});
 	        var list = [];
