@@ -62,7 +62,7 @@ class SpinSystem {
             cs[i] = result[i].delta;
             j = result[i].j;
             for( k = 0; k < j.length; k++) {
-                console.log(ids[result[i].atomIDs[0]],ids[j[k].assignment]);
+                //console.log(ids[result[i].atomIDs[0]],ids[j[k].assignment]);
                 jc[ids[result[i].atomIDs[0]]][ids[j[k].assignment]] = j[k].coupling;
                 jc[ids[j[k].assignment]][ids[result[i].atomIDs[0]]] = j[k].coupling;
             }
