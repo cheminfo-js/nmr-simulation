@@ -2,7 +2,8 @@
 
 const Matrix = require('ml-matrix');
 const SparseMatrix = require('ml-sparse-matrix');
-const binarySearch = require('ml-binary-search');
+const binarySearch = require('binary-search');
+const sortAsc = require('num-sort').asc;
 const newArray = require('new-array');
 
 const getPauli = require('./pauli');
@@ -71,7 +72,7 @@ function simulate1d(spinSystem, options) {
                 }
             }
 
-            frequencies.sort();
+            frequencies.sort(sortAsc);
             sumI=frequencies.length;
             weight=1;
 
@@ -159,7 +160,7 @@ function simulate1d(spinSystem, options) {
 
                 sumI += val;
                 var valFreq = diagB[i] - diagB[j];
-                var insertIn = binarySearch(frequencies, valFreq);
+                var insertIn = binarySearch(frequencies, valFreq, sortAsc);
                 if (insertIn < 0) {
                     frequencies.splice(-1 - insertIn, 0, valFreq);
                     intensities.splice(-1 - insertIn, 0, val);
