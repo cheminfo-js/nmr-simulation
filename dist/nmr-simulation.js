@@ -2446,7 +2446,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	        stdev = 0.5 * (averageDeviations[length / 2] + averageDeviations[length / 2 - 1]) / 0.6745;
 	    }
 
-	    return {mean, stdev};
+	    return {
+	        mean: mean,
+	        stdev: stdev
+	    };
 	};
 
 	exports.quartiles = function quartiles(values, alreadySorted) {
@@ -2695,7 +2698,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	            if (matrix[i][j] > max) max = matrix[i][j];
 	        }
 	    }
-	    return {min, max};
+	    return {
+	        min:min,
+	        max:max
+	    };
 	};
 
 	exports.entropy = function entropy(matrix, eps) {
@@ -3559,13 +3565,14 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	/**
 	 * Performs a binary search of value in array
-	 * @param array - Array in which value will be searched. It must be sorted.
-	 * @param value - Value to search in array
+	 * @param {number[]} array - Array in which value will be searched. It must be sorted.
+	 * @param {number} value - Value to search in array
 	 * @return {number} If value is found, returns its index in array. Otherwise, returns a negative number indicating where the value should be inserted: -(index + 1)
 	 */
-	function binarySearch(array, value) {
-	    var low = 0;
-	    var high = array.length - 1;
+	function binarySearch(array, value, options) {
+	    options = options || {};
+	    var low = options.from || 0;
+	    var high = options.to || array.length - 1;
 
 	    while (low <= high) {
 	        var mid = (low + high) >>> 1;
@@ -6519,25 +6526,40 @@ return /******/ (function(modules) { // webpackBootstrap
 	var cachedSetTimeout;
 	var cachedClearTimeout;
 
+	function defaultSetTimout() {
+	    throw new Error('setTimeout has not been defined');
+	}
+	function defaultClearTimeout () {
+	    throw new Error('clearTimeout has not been defined');
+	}
 	(function () {
 	    try {
-	        cachedSetTimeout = setTimeout;
-	    } catch (e) {
-	        cachedSetTimeout = function () {
-	            throw new Error('setTimeout is not defined');
+	        if (typeof setTimeout === 'function') {
+	            cachedSetTimeout = setTimeout;
+	        } else {
+	            cachedSetTimeout = defaultSetTimout;
 	        }
+	    } catch (e) {
+	        cachedSetTimeout = defaultSetTimout;
 	    }
 	    try {
-	        cachedClearTimeout = clearTimeout;
-	    } catch (e) {
-	        cachedClearTimeout = function () {
-	            throw new Error('clearTimeout is not defined');
+	        if (typeof clearTimeout === 'function') {
+	            cachedClearTimeout = clearTimeout;
+	        } else {
+	            cachedClearTimeout = defaultClearTimeout;
 	        }
+	    } catch (e) {
+	        cachedClearTimeout = defaultClearTimeout;
 	    }
 	} ())
 	function runTimeout(fun) {
 	    if (cachedSetTimeout === setTimeout) {
 	        //normal enviroments in sane situations
+	        return setTimeout(fun, 0);
+	    }
+	    // if setTimeout wasn't available but was latter defined
+	    if ((cachedSetTimeout === defaultSetTimout || !cachedSetTimeout) && setTimeout) {
+	        cachedSetTimeout = setTimeout;
 	        return setTimeout(fun, 0);
 	    }
 	    try {
@@ -6558,6 +6580,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	function runClearTimeout(marker) {
 	    if (cachedClearTimeout === clearTimeout) {
 	        //normal enviroments in sane situations
+	        return clearTimeout(marker);
+	    }
+	    // if clearTimeout wasn't available but was latter defined
+	    if ((cachedClearTimeout === defaultClearTimeout || !cachedClearTimeout) && clearTimeout) {
+	        cachedClearTimeout = clearTimeout;
 	        return clearTimeout(marker);
 	    }
 	    try {
@@ -7015,10 +7042,11 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	const Matrix = __webpack_require__(2);
 	const SparseMatrix = __webpack_require__(32);
-	const binarySearch = __webpack_require__(11);
+	const binarySearch = __webpack_require__(35);
+	const sortAsc = __webpack_require__(36).asc;
 	const newArray = __webpack_require__(19);
 
-	const getPauli = __webpack_require__(35);
+	const getPauli = __webpack_require__(38);
 
 	const DEBUG = false;
 	const smallValue = 1e-2;
@@ -7084,7 +7112,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	                }
 	            }
 
-	            frequencies.sort();
+	            frequencies.sort(sortAsc);
 	            sumI=frequencies.length;
 	            weight=1;
 
@@ -7172,7 +7200,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	                sumI += val;
 	                var valFreq = diagB[i] - diagB[j];
-	                var insertIn = binarySearch(frequencies, valFreq);
+	                var insertIn = binarySearch(frequencies, valFreq, sortAsc);
 	                if (insertIn < 0) {
 	                    frequencies.splice(-1 - insertIn, 0, valFreq);
 	                    intensities.splice(-1 - insertIn, 0, val);
@@ -7918,7 +7946,8 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 34 */
 /***/ function(module, exports, __webpack_require__) {
 
-	const binarySearch = __webpack_require__(11);
+	const binarySearch = __webpack_require__(35);
+	const sortAsc = __webpack_require__(36).asc;
 
 	const largestPrime = 0x7fffffff;
 
@@ -7991,12 +8020,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	    60045577, 120091177, 240182359, 480364727, 960729461, 1921458943
 	];
 
-	primeNumbers.sort((a, b) => a - b);
+	primeNumbers.sort(sortAsc);
 
 	function nextPrime(value) {
-	    let index = binarySearch(primeNumbers, value);
+	    let index = binarySearch(primeNumbers, value, sortAsc);
 	    if (index < 0) {
-	        index = -index - 1;
+	        index = ~index;
 	    }
 	    return primeNumbers[index];
 	}
@@ -8007,6 +8036,91 @@ return /******/ (function(modules) { // webpackBootstrap
 
 /***/ },
 /* 35 */
+/***/ function(module, exports) {
+
+	module.exports = function(haystack, needle, comparator, low, high) {
+	  var mid, cmp;
+
+	  if(low === undefined)
+	    low = 0;
+
+	  else {
+	    low = low|0;
+	    if(low < 0 || low >= haystack.length)
+	      throw new RangeError("invalid lower bound");
+	  }
+
+	  if(high === undefined)
+	    high = haystack.length - 1;
+
+	  else {
+	    high = high|0;
+	    if(high < low || high >= haystack.length)
+	      throw new RangeError("invalid upper bound");
+	  }
+
+	  while(low <= high) {
+	    /* Note that "(low + high) >>> 1" may overflow, and results in a typecast
+	     * to double (which gives the wrong results). */
+	    mid = low + (high - low >> 1);
+	    cmp = +comparator(haystack[mid], needle, mid, haystack);
+
+	    /* Too low. */
+	    if(cmp < 0.0)
+	      low  = mid + 1;
+
+	    /* Too high. */
+	    else if(cmp > 0.0)
+	      high = mid - 1;
+
+	    /* Key found. */
+	    else
+	      return mid;
+	  }
+
+	  /* Key not found. */
+	  return ~low;
+	}
+
+
+/***/ },
+/* 36 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	var numberIsNan = __webpack_require__(37);
+
+	function assertNum(x) {
+		if (typeof x !== 'number' || numberIsNan(x)) {
+			throw new TypeError('Expected a number');
+		}
+	}
+
+	exports.asc = function (a, b) {
+		assertNum(a);
+		assertNum(b);
+		return a - b;
+	};
+
+	exports.desc = function (a, b) {
+		assertNum(a);
+		assertNum(b);
+		return b - a;
+	};
+
+
+/***/ },
+/* 37 */
+/***/ function(module, exports) {
+
+	'use strict';
+	module.exports = Number.isNaN || function (x) {
+		return x !== x;
+	};
+
+
+/***/ },
+/* 38 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
