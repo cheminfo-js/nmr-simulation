@@ -26,7 +26,8 @@ M  END
 request.post("http://www.nmrdb.org/service/predictor",{form:{molfile:molfile}},function(error, response, body){
     const predictor = new NmrPredictor("spinus");
     const prediction = predictor.predict(molfile, body);
-    const spinSystem = nmr.SpinSystem.fromPrediction(prediction);    console.log(spinSystem);
+    const spinSystem = nmr.SpinSystem.fromPrediction(prediction);
+    console.log(spinSystem);
     console.time('simulate');
     var simulation = nmr.simulate1D(spinSystem, {
         frequency: 400.082470657773,

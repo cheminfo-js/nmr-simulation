@@ -4,7 +4,12 @@
   "description": "Simulate NMR spectra from spin systems",
   "main": "src/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "eslint": "eslint src test --cache",
+    "eslint-fix": "npm run eslint -- --fix",
+    "test": "npm run test-mocha",
+    "test-mocha": "mocha --compilers js:babel-register --require should --reporter mocha-better-spec-reporter --recursive src/**/__tests__/**/*.js",
+    "test-cov": "istanbul cover _mocha -- --compilers js:babel-register --require should --reporter dot --recursive src/**/__tests__/**/*.js",
+    "test-travis": "istanbul cover _mocha --report lcovonly -- --compilers js:babel-register --require should --reporter mocha-better-spec-reporter --recursive src/**/__tests__/**/*.js && npm run eslint",
     "build": "cheminfo build --no-uglify"
   },
   "files": [
@@ -38,8 +43,20 @@
     "num-sort": "^1.0.0"
   },
   "devDependencies": {
+    "babel-cli": "^6.2.0",
+    "babel-core": "^6.2.1",
+    "babel-plugin-transform-es2015-block-scoping": "^6.1.18",
+    "babel-preset-es2015-node4": "^2.0.1",
+    "babel-register": "^6.2.0",
+    "babelify": "^7.2.0",
+    "babili": "0.0.8",
     "cheminfo-tools": "^1.11.0",
-    "request": "2.78.0",
-    "nmr-predictor": "0.1.0"
+    "eslint": "^3.9.1",
+    "eslint-config-cheminfo": "^1.5.2",
+    "eslint-plugin-no-only-tests": "^1.1.0",
+    "mocha": "^3.1.2",
+    "mocha-better-spec-reporter": "^3.0.1",
+    "should": "^11.1.1",
+    "nmr-predictor": "0.2.3"
   }
 }
