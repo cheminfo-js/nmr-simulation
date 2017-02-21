@@ -30,7 +30,7 @@ describe('Simulation from molfile', function () {
 
     it('simulation gives {x,y} data', function (done) {
         const predictor = new NmrPredictor('spinus');
-        predictor.predict(molfile, {group: false}).then(prediction => {
+        predictor.spinus(molfile, {group: true}).then(prediction => {
 
             const spinSystem = nmr.SpinSystem.fromPrediction(prediction);
             var options = {

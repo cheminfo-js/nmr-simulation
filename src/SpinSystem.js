@@ -35,7 +35,7 @@ class SpinSystem {
             for (j = 0; j < nCoup; j++) {
                 var withID = tokens[4 + 3 * j] - 1;
                 var idx = ids[withID];
-                jc[i][idx] = +tokens[6 + 3 * j]/2;
+                jc[i][idx] = +tokens[6 + 3 * j];
             }
         }
 
@@ -47,30 +47,48 @@ class SpinSystem {
         return new SpinSystem(cs, jc, newArray(nspins, 2));
     }
 
-    static fromPrediction(result) {
-        const nSpins = result.length;
+    static fromPrediction(input) {
+        let predictions = SpinSystem._ungroupAtoms(input);
+        const nSpins = predictions.length;
         const cs = new Array(nSpins);
         const jc = Matrix.zeros(nSpins, nSpins);
         const multiplicity = new Array(nSpins);
         const ids = {};
         var i,k,j;
         for(i=0;i<nSpins;i++) {
-            cs[i] = result[i].delta;
-            ids[result[i].atomIDs[0]] = i;
+            cs[i] = predictions[i].delta;
+            ids[predictions[i].atomIDs[0]] = i;
         }
         for( i = 0; i < nSpins; i++) {
-            cs[i] = result[i].delta;
-            j = result[i].j;
+            cs[i] = predictions[i].delta;
+            j = predictions[i].j;
             for( k = 0; k < j.length; k++) {
                 //console.log(ids[result[i].atomIDs[0]],ids[j[k].assignment]);
-                jc[ids[result[i].atomIDs[0]]][ids[j[k].assignment]] = j[k].coupling;
-                jc[ids[j[k].assignment]][ids[result[i].atomIDs[0]]] = j[k].coupling;
+                jc[ids[predictions[i].atomIDs[0]]][ids[j[k].assignment]] = j[k].coupling;
+                jc[ids[j[k].assignment]][ids[predictions[i].atomIDs[0]]] = j[k].coupling;
             }
-            multiplicity[i] = result[i].integral+1;
+            multiplicity[i] = predictions[i].integral+1;
         }
 
         return new SpinSystem(cs, jc, multiplicity);
     }
+
+
+    static _ungroupAtoms(prediction) {
+        let result = [];
+        prediction.forEach(pred => {
+            let atomIDs = pred['atomIDs'];
+            for(let i = 0; i < atomIDs.length; i++) {
+                let tempPred = JSON.parse(JSON.stringify(pred));
+                tempPred.atomIDs = [atomIDs[i]];
+                tempPred.integral = 1;
+                result.push(tempPred);
+            }
+        });
+
+        return result;
+    }
+
 
     _initClusters() {
         this.clusters = simpleClustering(this.connectivity, {out:"indexes"});

@@ -52,7 +52,7 @@ function simulate1d(spinSystem, options) {
         var sumI = 0;
         const frequencies = [];
         const intensities = [];
-        if (cluster.length>maxClusterSize) {
+        if (cluster.length > maxClusterSize) {
             //This is a single spin, but the cluster exceeds the maxClusterSize criteria
             //we use the simple multiplicity algorithm
             //Add the central peak. It will be split with every single J coupling.
@@ -63,7 +63,7 @@ function simulate1d(spinSystem, options) {
             frequencies.push(-chemicalShifts[index]);
             for (i = 0;i < cluster.length; i++) {
                 if (cluster[i] < 0) {
-                    jc = spinSystem.couplingConstants[index][clusterFake[i]];
+                    jc = spinSystem.couplingConstants[index][clusterFake[i]] / 2;
                     currentSize = frequencies.length;
                     for ( j=0 ; j < currentSize; j++) {
                         frequencies.push(frequencies[j] + jc);
@@ -275,7 +275,7 @@ function getHamiltonian(chemicalShifts, couplingConstants, multiplicity, conMatr
                 kron1.add(A1.kroneckerProduct(L.y).kroneckerProduct(B1).mul(-1).mmul(A2.kroneckerProduct(S.y).kroneckerProduct(B2)));
                 kron1.add(A1.kroneckerProduct(L.z).kroneckerProduct(B1).mmul(A2.kroneckerProduct(S.z).kroneckerProduct(B2)));
 
-                clusterHam.add(kron1.mul(couplingConstants[n][k]));
+                clusterHam.add(kron1.mul(couplingConstants[n][k] / 2));
             }
         }
     }
