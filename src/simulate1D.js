@@ -33,7 +33,7 @@ function simulate1d(spinSystem, options) {
     const b = lnPoints / 2;
     const c = lineWidthPoints * lineWidthPoints * 2;
     for (i = 0; i < gaussianLength; i++) {
-        gaussian[i] = 1e12 * Math.exp(-((i - b) * (i - b)) / c);
+        gaussian[i] = 1e12 * Math.exp(- ((i - b) * (i - b)) / c);
     }
 
     const result = new newArray(nbPoints, 0);
@@ -44,7 +44,7 @@ function simulate1d(spinSystem, options) {
 
         var clusterFake = new Array(cluster.length);
         for (i = 0; i < cluster.length; i++) {
-            clusterFake[i] = cluster[i]<0?-cluster[i]-1:cluster[i];
+            clusterFake[i] = cluster[i] < 0? - cluster[i] - 1: cluster[i];
         }
 
         var weight = 1;
@@ -60,7 +60,7 @@ function simulate1d(spinSystem, options) {
             index = cluster[index-1];
             var currentSize, jc;
             frequencies.push(-chemicalShifts[index]);
-            for (i = 0;i < cluster.length; i++) {
+            for (i = 0; i < cluster.length; i++) {
                 if (cluster[i] < 0) {
                     jc = spinSystem.couplingConstants[index][clusterFake[i]] / 2;
                     currentSize = frequencies.length;
@@ -72,10 +72,10 @@ function simulate1d(spinSystem, options) {
             }
 
             frequencies.sort(sortAsc);
-            sumI=frequencies.length;
-            weight=1;
+            sumI = frequencies.length;
+            weight = 1;
 
-            for (i=0;i<sumI;i++){
+            for (i = 0; i < sumI; i++) {
                 intensities.push(1);
             }
 
@@ -191,7 +191,7 @@ function simulate1d(spinSystem, options) {
             addPeak(result, valFreq / count, inte * weight, from, to, nbPoints, gaussian);
         }
     }
-    if(output==="xy")
+    if(output === "xy")
         return {x:_getX(options.from, options.to, nbPoints),y:result};
     if(output == "y")
         return result;
@@ -199,7 +199,7 @@ function simulate1d(spinSystem, options) {
 
 function addPeak(result, freq, height, from, to, nbPoints, gaussian) {
     //console.log(freq, height)
-    const center = (nbPoints * (-freq-from) / (to - from)) | 0;
+    const center = (nbPoints * (- freq - from) / (to - from)) | 0;
     const lnPoints = gaussian.length;
     var index = 0;
     var indexLorentz = 0;
@@ -269,7 +269,7 @@ function getHamiltonian(chemicalShifts, couplingConstants, multiplicity, conMatr
                 B2 = SparseMatrix.eye(temp);
 
                 const kron1 = A1.kroneckerProduct(L.x).kroneckerProduct(B1).mmul(A2.kroneckerProduct(S.x).kroneckerProduct(B2));
-                kron1.add(A1.kroneckerProduct(L.y).kroneckerProduct(B1).mul(-1).mmul(A2.kroneckerProduct(S.y).kroneckerProduct(B2)));
+                kron1.add(A1.kroneckerProduct(L.y).kroneckerProduct(B1).mul( - 1).mmul(A2.kroneckerProduct(S.y).kroneckerProduct(B2)));
                 kron1.add(A1.kroneckerProduct(L.z).kroneckerProduct(B1).mmul(A2.kroneckerProduct(S.z).kroneckerProduct(B2)));
 
                 clusterHam.add(kron1.mul(couplingConstants[n][k] / 2));
@@ -282,9 +282,9 @@ function getHamiltonian(chemicalShifts, couplingConstants, multiplicity, conMatr
 
 function _getX(from, to, nbPoints){
     const x = new Array(nbPoints);
-    const dx = (to-from)/(nbPoints-1);
+    const dx = (to-from) / (nbPoints - 1);
     for (var i = 0 ; i < nbPoints; i++) {
-        x[i]=from+i*dx;
+        x[i] = from + i * dx;
     }
     return x;
 }

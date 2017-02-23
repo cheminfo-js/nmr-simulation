@@ -48,7 +48,7 @@ class SpinSystem {
     }
 
     static fromPrediction(input) {
-        let predictions = SpinSystem._ungroupAtoms(input);
+        let predictions = SpinSystem.ungroupAtoms(input);
         const nSpins = predictions.length;
         const cs = new Array(nSpins);
         const jc = Matrix.zeros(nSpins, nSpins);
@@ -74,7 +74,7 @@ class SpinSystem {
     }
 
 
-    static _ungroupAtoms(prediction) {
+    static ungroupAtoms(prediction) {
         let result = [];
         prediction.forEach(pred => {
             let atomIDs = pred['atomIDs'];
