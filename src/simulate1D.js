@@ -8,7 +8,6 @@ const newArray = require('new-array');
 
 const getPauli = require('./pauli');
 
-const DEBUG = false;
 const smallValue = 1e-2;
 
 function simulate1d(spinSystem, options) {
@@ -226,8 +225,6 @@ function getHamiltonian(chemicalShifts, couplingConstants, multiplicity, conMatr
     for (var i = 0; i < cluster.length; i++) {
         hamSize *= multiplicity[cluster[i]];
     }
-
-    if(DEBUG) console.log("Hamiltonian size: "+hamSize);
 
     const clusterHam = new SparseMatrix(hamSize, hamSize);
 
