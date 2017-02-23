@@ -73,7 +73,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /******/ 	__webpack_require__.p = "";
 
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 39);
+/******/ 	return __webpack_require__(__webpack_require__.s = 40);
 /******/ })
 /************************************************************************/
 /******/ ([
@@ -83,7 +83,7 @@ return /******/ (function(modules) { // webpackBootstrap
 "use strict";
 
 
-const arrayUtils = __webpack_require__(16);
+const arrayUtils = __webpack_require__(17);
 
 /**
  * Real matrix
@@ -1777,6 +1777,17 @@ exports.getFilled2DArray = function (rows, columns, value) {
 
 /***/ }),
 /* 3 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+module.exports = __webpack_require__(0);
+module.exports.Decompositions = module.exports.DC = __webpack_require__(30);
+
+
+/***/ }),
+/* 4 */
 /***/ (function(module, exports) {
 
 module.exports = newArray
@@ -1792,7 +1803,7 @@ function newArray (n, value) {
 
 
 /***/ }),
-/* 4 */
+/* 5 */
 /***/ (function(module, exports) {
 
 module.exports = function(haystack, needle, comparator, low, high) {
@@ -1841,7 +1852,7 @@ module.exports = function(haystack, needle, comparator, low, high) {
 
 
 /***/ }),
-/* 5 */
+/* 6 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1864,14 +1875,14 @@ euclidean.squared = squaredEuclidean;
 
 
 /***/ }),
-/* 6 */
+/* 7 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
 var Cluster = __webpack_require__(1);
-var util = __webpack_require__(36);
+var util = __webpack_require__(37);
 
 function ClusterLeaf (index) {
     Cluster.call(this);
@@ -1886,21 +1897,10 @@ module.exports = ClusterLeaf;
 
 
 /***/ }),
-/* 7 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-module.exports = __webpack_require__(0);
-module.exports.Decompositions = module.exports.DC = __webpack_require__(29);
-
-
-/***/ }),
 /* 8 */
 /***/ (function(module, exports, __webpack_require__) {
 
-const HashTable = __webpack_require__(19);
+const HashTable = __webpack_require__(20);
 
 class SparseMatrix {
     constructor(rows, columns, options = {}) {
@@ -2688,7 +2688,7 @@ exports.cumulativeSum = function cumulativeSum(array) {
 
 
 exports.array = __webpack_require__(9);
-exports.matrix = __webpack_require__(31);
+exports.matrix = __webpack_require__(32);
 
 
 /***/ }),
@@ -2697,7 +2697,7 @@ exports.matrix = __webpack_require__(31);
 
 "use strict";
 
-var numberIsNan = __webpack_require__(32);
+var numberIsNan = __webpack_require__(33);
 
 function assertNum(x) {
 	if (typeof x !== 'number' || numberIsNan(x)) {
@@ -2725,10 +2725,10 @@ exports.desc = function (a, b) {
 "use strict";
 
 
-const Matrix = __webpack_require__(7);
-const newArray = __webpack_require__(3);
-const simpleClustering = __webpack_require__(30);
-const hlClust = __webpack_require__(23);
+const Matrix = __webpack_require__(3);
+const newArray = __webpack_require__(4);
+const simpleClustering = __webpack_require__(31);
+const hlClust = __webpack_require__(24);
 const DEBUG = false;
 
 class SpinSystem {
@@ -3012,15 +3012,14 @@ module.exports = SpinSystem;
 "use strict";
 
 
-const Matrix = __webpack_require__(7);
+const Matrix = __webpack_require__(3);
 const SparseMatrix = __webpack_require__(8);
-const binarySearch = __webpack_require__(4);
+const binarySearch = __webpack_require__(5);
 const sortAsc = __webpack_require__(11).asc;
-const newArray = __webpack_require__(3);
+const newArray = __webpack_require__(4);
 
-const getPauli = __webpack_require__(38);
+const getPauli = __webpack_require__(39);
 
-const DEBUG = false;
 const smallValue = 1e-2;
 
 function simulate1d(spinSystem, options) {
@@ -3239,8 +3238,6 @@ function getHamiltonian(chemicalShifts, couplingConstants, multiplicity, conMatr
         hamSize *= multiplicity[cluster[i]];
     }
 
-    if(DEBUG) console.log("Hamiltonian size: "+hamSize);
-
     const clusterHam = new SparseMatrix(hamSize, hamSize);
 
     for (var pos = 0; pos < cluster.length; pos++) {
@@ -3309,6 +3306,98 @@ module.exports = simulate1d;
 
 /***/ }),
 /* 14 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+const Matrix = __webpack_require__(3);
+
+let defOptions = {'H': {frequency: 400, lineWidth: 10}, 'C': {frequency: 100, lineWidth: 10}}
+
+function simule2DNmrSpectrum(table, options) {
+    var i, j;
+    const fromLabel = table[0].fromAtomLabel;
+    const toLabel = table[0].toLabel;
+    const frequencyX = options.frequencyX || defOptions[fromLabel].frequency;
+    const frequencyY = options.frequencyY || defOptions[toLabel].frequency;
+    var lineWidthX = options.lineWidthX  || defOptions[fromLabel].lineWidth;
+    var lineWidthY = options.lineWidthY  || defOptions[toLabel].lineWidth;
+
+    var sigmaX = lineWidthX / frequencyX;
+    var sigmaY = lineWidthY / frequencyY;
+
+    var minX = table[0].fromChemicalShift;
+    var maxX = table[0].fromChemicalShift;
+    var minY = table[0].toChemicalShift;
+    var maxY = table[0].toChemicalShift;
+    i = 1;
+    while(i < table.length) {
+        minX = Math.min(minX, table[i].fromChemicalShift);
+        maxX = Math.max(maxX, table[i].fromChemicalShift);
+        minY = Math.min(minY, table[i].toChemicalShift);
+        maxY = Math.max(maxY, table[i].toChemicalShift);
+        i++;
+    }
+
+    if(options.firstX !== null && !isNaN(options.firstX))
+        minX = options.firstX;
+    if(options.firstY !== null && !isNaN(options.firstY))
+        minY = options.firstY;
+    if(options.lastX !== null && !isNaN(options.lastX))
+        maxX = options.lastX
+    if(options.lastY !== null && !isNaN(options.lastY))
+        maxY = options.lastY;
+
+    var nbPointsX = options.nbPointsX || 512;
+    var nbPointsY = options.nbPointsY || 512;
+
+    var spectraMatrix = new Matrix(nbPointsY, nbPointsX).fill(0);
+    i = 0;
+    while(i < table.length) {
+        //parameters.couplingConstant = table[i].j;
+        //parameters.pathLength = table[i].pathLength;
+        let peak = {
+            x: unitsToArrayPoints(table[i].fromChemicalShift, minX, maxX, nbPointsX),
+            y: unitsToArrayPoints(table[i].toChemicalShift, minY, maxY, nbPointsY),
+            z: table[i].fromAtoms.length + table[i].toAtoms.length,
+            widthX: unitsToArrayPoints(sigmaX + minX, minX, maxX, nbPointsX),
+            widthY: unitsToArrayPoints(sigmaY+ minY, minY, maxY, nbPointsY)
+        }
+        addPeak(spectraMatrix, peak);
+        i++;
+    }
+    return spectraMatrix;
+}
+
+function unitsToArrayPoints(x, from, to, nbPoints) {
+    return ((x - from) * nbPoints - 1) / (to - from);
+}
+
+function addPeak(matrix, peak) {
+    var nSigma = 4;
+    var fromX = Math.max(0, Math.round(peak.x - peak.widthX * nSigma));
+    var toX = Math.min(matrix[0].length - 1, Math.round(peak.x + peak.widthX * nSigma));
+    var fromY =  Math.max(0, Math.round(peak.y - peak.widthY * nSigma));
+    var toY = Math.min(matrix.length - 1, Math.round(peak.y + peak.widthY * nSigma));
+
+    var squareSigmaX = peak.widthX * peak.widthX;
+    var squareSigmaY = peak.widthY * peak.widthY;
+    for (var j = fromY; j < toY; j++) {
+        for (var i = fromX; i < toX; i++) {
+            var exponent = Math.pow(peak.x - i, 2) / squareSigmaX +
+                Math.pow(peak.y - j, 2) / squareSigmaY;
+            var result = 10000 * peak.z * Math.exp( - exponent);
+            matrix[j][i] += result;
+        }
+    }
+}
+
+
+module.exports = simule2DNmrSpectrum;
+
+/***/ }),
+/* 15 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -3540,7 +3629,7 @@ module.exports = {
 
 
 /***/ }),
-/* 15 */
+/* 16 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -3800,17 +3889,17 @@ exports.getEquallySpacedData = getEquallySpacedData;
 exports.integral = integral;
 
 /***/ }),
-/* 16 */
+/* 17 */
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = exports = __webpack_require__(14);
-exports.getEquallySpacedData = __webpack_require__(15).getEquallySpacedData;
-exports.SNV = __webpack_require__(17).SNV;
-exports.binarySearch = __webpack_require__(18);
+module.exports = exports = __webpack_require__(15);
+exports.getEquallySpacedData = __webpack_require__(16).getEquallySpacedData;
+exports.SNV = __webpack_require__(18).SNV;
+exports.binarySearch = __webpack_require__(19);
 
 
 /***/ }),
-/* 17 */
+/* 18 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -3837,7 +3926,7 @@ function SNV(data) {
 
 
 /***/ }),
-/* 18 */
+/* 19 */
 /***/ (function(module, exports) {
 
 /**
@@ -3870,15 +3959,15 @@ module.exports = binarySearch;
 
 
 /***/ }),
-/* 19 */
+/* 20 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
-const newArray = __webpack_require__(3);
+const newArray = __webpack_require__(4);
 
-const primeFinder = __webpack_require__(20);
+const primeFinder = __webpack_require__(21);
 const nextPrime = primeFinder.nextPrime;
 const largestPrime = primeFinder.largestPrime;
 
@@ -4180,10 +4269,10 @@ function chooseShrinkCapacity(size, minLoad, maxLoad) {
 
 
 /***/ }),
-/* 20 */
+/* 21 */
 /***/ (function(module, exports, __webpack_require__) {
 
-const binarySearch = __webpack_require__(4);
+const binarySearch = __webpack_require__(5);
 const sortAsc = __webpack_require__(11).asc;
 
 const largestPrime = 0x7fffffff;
@@ -4272,14 +4361,14 @@ exports.largestPrime = largestPrime;
 
 
 /***/ }),
-/* 21 */
+/* 22 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
-var euclidean = __webpack_require__(5);
-var ClusterLeaf = __webpack_require__(6);
+var euclidean = __webpack_require__(6);
+var ClusterLeaf = __webpack_require__(7);
 var Cluster = __webpack_require__(1);
 
 /**
@@ -4517,14 +4606,14 @@ module.exports = agnes;
 
 
 /***/ }),
-/* 22 */
+/* 23 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
-var euclidean = __webpack_require__(5);
-var ClusterLeaf = __webpack_require__(6);
+var euclidean = __webpack_require__(6);
+var ClusterLeaf = __webpack_require__(7);
 var Cluster = __webpack_require__(1);
 
 /**
@@ -4815,18 +4904,18 @@ module.exports = diana;
 
 
 /***/ }),
-/* 23 */
+/* 24 */
 /***/ (function(module, exports, __webpack_require__) {
 
-exports.agnes = __webpack_require__(21);
-exports.diana = __webpack_require__(22);
+exports.agnes = __webpack_require__(22);
+exports.diana = __webpack_require__(23);
 //exports.birch = require('./birch');
 //exports.cure = require('./cure');
 //exports.chameleon = require('./chameleon');
 
 
 /***/ }),
-/* 24 */
+/* 25 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -4922,7 +5011,7 @@ module.exports = CholeskyDecomposition;
 
 
 /***/ }),
-/* 25 */
+/* 26 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -5712,7 +5801,7 @@ module.exports = EigenvalueDecomposition;
 
 
 /***/ }),
-/* 26 */
+/* 27 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -5888,7 +5977,7 @@ module.exports = LuDecomposition;
 
 
 /***/ }),
-/* 27 */
+/* 28 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -6045,7 +6134,7 @@ module.exports = QrDecomposition;
 
 
 /***/ }),
-/* 28 */
+/* 29 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -6565,7 +6654,7 @@ module.exports = SingularValueDecomposition;
 
 
 /***/ }),
-/* 29 */
+/* 30 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -6573,11 +6662,11 @@ module.exports = SingularValueDecomposition;
 
 var Matrix = __webpack_require__(0);
 
-var SingularValueDecomposition = __webpack_require__(28);
-var EigenvalueDecomposition = __webpack_require__(25);
-var LuDecomposition = __webpack_require__(26);
-var QrDecomposition = __webpack_require__(27);
-var CholeskyDecomposition = __webpack_require__(24);
+var SingularValueDecomposition = __webpack_require__(29);
+var EigenvalueDecomposition = __webpack_require__(26);
+var LuDecomposition = __webpack_require__(27);
+var QrDecomposition = __webpack_require__(28);
+var CholeskyDecomposition = __webpack_require__(25);
 
 function inverse(matrix) {
     matrix = Matrix.checkMatrix(matrix);
@@ -6617,7 +6706,7 @@ module.exports = {
 
 
 /***/ }),
-/* 30 */
+/* 31 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -6732,7 +6821,7 @@ function fullClusterGeneratorVector(conn){
 }
 
 /***/ }),
-/* 31 */
+/* 32 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -7350,7 +7439,7 @@ exports.weightedScatter = function weightedScatter(matrix, weights, means, facto
 
 
 /***/ }),
-/* 32 */
+/* 33 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -7361,7 +7450,7 @@ module.exports = Number.isNaN || function (x) {
 
 
 /***/ }),
-/* 33 */
+/* 34 */
 /***/ (function(module, exports) {
 
 // shim for using process in browser
@@ -7547,7 +7636,7 @@ process.umask = function() { return 0; };
 
 
 /***/ }),
-/* 34 */
+/* 35 */
 /***/ (function(module, exports) {
 
 if (typeof Object.create === 'function') {
@@ -7576,7 +7665,7 @@ if (typeof Object.create === 'function') {
 
 
 /***/ }),
-/* 35 */
+/* 36 */
 /***/ (function(module, exports) {
 
 module.exports = function isBuffer(arg) {
@@ -7587,7 +7676,7 @@ module.exports = function isBuffer(arg) {
 }
 
 /***/ }),
-/* 36 */
+/* 37 */
 /***/ (function(module, exports, __webpack_require__) {
 
 /* WEBPACK VAR INJECTION */(function(global, process) {// Copyright Joyent, Inc. and other Node contributors.
@@ -8115,7 +8204,7 @@ function isPrimitive(arg) {
 }
 exports.isPrimitive = isPrimitive;
 
-exports.isBuffer = __webpack_require__(35);
+exports.isBuffer = __webpack_require__(36);
 
 function objectToString(o) {
   return Object.prototype.toString.call(o);
@@ -8159,7 +8248,7 @@ exports.log = function() {
  *     prototype.
  * @param {function} superCtor Constructor function to inherit prototype from.
  */
-exports.inherits = __webpack_require__(34);
+exports.inherits = __webpack_require__(35);
 
 exports._extend = function(origin, add) {
   // Don't do anything if add isn't an object
@@ -8177,10 +8266,10 @@ function hasOwnProperty(obj, prop) {
   return Object.prototype.hasOwnProperty.call(obj, prop);
 }
 
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(37), __webpack_require__(33)))
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(38), __webpack_require__(34)))
 
 /***/ }),
-/* 37 */
+/* 38 */
 /***/ (function(module, exports) {
 
 var g;
@@ -8207,7 +8296,7 @@ module.exports = g;
 
 
 /***/ }),
-/* 38 */
+/* 39 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -8255,7 +8344,7 @@ module.exports = getPauli;
 
 
 /***/ }),
-/* 39 */
+/* 40 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -8263,6 +8352,7 @@ module.exports = getPauli;
 
 exports.SpinSystem = __webpack_require__(12);
 exports.simulate1D = __webpack_require__(13);
+exports.simulate2D = __webpack_require__(14);
 
 
 /***/ })
