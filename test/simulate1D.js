@@ -1,7 +1,7 @@
 'use strict';
 
 const nmr = require('..');
-const NmrPredictor = new require('nmr-predictor');
+const predictor = require('nmr-predictor');
 
 var molfile = `Benzene, ethyl-, ID: C100414
   NIST    16081116462D 1   1.00000     0.00000
@@ -27,11 +27,8 @@ M  END
 `;
 
 describe('Simulation from molfile', function () {
-
-    it('simulation gives {x,y} data', function (done) {
-        const predictor = new NmrPredictor('spinus');
-        predictor.spinus(molfile, {group: true}).then(prediction => {
-
+    it('simulation gives {x,y} data', function () {
+        return predictor.spinus(molfile, {group: true}).then(prediction => {
             const spinSystem = nmr.SpinSystem.fromPrediction(prediction);
             var options = {
                 frequency: 400.082470657773,
@@ -41,13 +38,12 @@ describe('Simulation from molfile', function () {
                 nbPoints: 16384,
                 maxClusterSize: 8,
                 output: 'xy'
-            }
+            };
             spinSystem.ensureClusterSize(options);
             var simulation = nmr.simulate1D(spinSystem, options);
-            simulation.should.hasOwnProperty('x');
-            simulation.should.hasOwnProperty('y');
+            simulation.should.have.property('x');
+            simulation.should.have.property('y');
             simulation.x.length.should.eql(16384);
-            done();
-        }, reject => { console.log(reject)});
+        });
     });
 });

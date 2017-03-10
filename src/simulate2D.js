@@ -2,16 +2,16 @@
 
 const Matrix = require('ml-matrix');
 
-let defOptions = {'H': {frequency: 400, lineWidth: 10}, 'C': {frequency: 100, lineWidth: 10}}
+let defOptions = {'H': {frequency: 400, lineWidth: 10}, 'C': {frequency: 100, lineWidth: 10}};
 
 function simule2DNmrSpectrum(table, options) {
-    var i, j;
+    var i;
     const fromLabel = table[0].fromAtomLabel;
     const toLabel = table[0].toLabel;
     const frequencyX = options.frequencyX || defOptions[fromLabel].frequency;
     const frequencyY = options.frequencyY || defOptions[toLabel].frequency;
-    var lineWidthX = options.lineWidthX  || defOptions[fromLabel].lineWidth;
-    var lineWidthY = options.lineWidthY  || defOptions[toLabel].lineWidth;
+    var lineWidthX = options.lineWidthX || defOptions[fromLabel].lineWidth;
+    var lineWidthY = options.lineWidthY || defOptions[toLabel].lineWidth;
 
     var sigmaX = lineWidthX / frequencyX;
     var sigmaY = lineWidthY / frequencyY;
@@ -21,7 +21,7 @@ function simule2DNmrSpectrum(table, options) {
     var minY = table[0].toChemicalShift;
     var maxY = table[0].toChemicalShift;
     i = 1;
-    while(i < table.length) {
+    while (i < table.length) {
         minX = Math.min(minX, table[i].fromChemicalShift);
         maxX = Math.max(maxX, table[i].fromChemicalShift);
         minY = Math.min(minY, table[i].toChemicalShift);
@@ -29,21 +29,25 @@ function simule2DNmrSpectrum(table, options) {
         i++;
     }
 
-    if(options.firstX !== null && !isNaN(options.firstX))
+    if (options.firstX !== null && !isNaN(options.firstX)) {
         minX = options.firstX;
-    if(options.firstY !== null && !isNaN(options.firstY))
+    }
+    if (options.firstY !== null && !isNaN(options.firstY)) {
         minY = options.firstY;
-    if(options.lastX !== null && !isNaN(options.lastX))
-        maxX = options.lastX
-    if(options.lastY !== null && !isNaN(options.lastY))
+    }
+    if (options.lastX !== null && !isNaN(options.lastX)) {
+        maxX = options.lastX;
+    }
+    if (options.lastY !== null && !isNaN(options.lastY)) {
         maxY = options.lastY;
+    }
 
     var nbPointsX = options.nbPointsX || 512;
     var nbPointsY = options.nbPointsY || 512;
 
     var spectraMatrix = new Matrix(nbPointsY, nbPointsX).fill(0);
     i = 0;
-    while(i < table.length) {
+    while (i < table.length) {
         //parameters.couplingConstant = table[i].j;
         //parameters.pathLength = table[i].pathLength;
         let peak = {
@@ -51,8 +55,8 @@ function simule2DNmrSpectrum(table, options) {
             y: unitsToArrayPoints(table[i].toChemicalShift, minY, maxY, nbPointsY),
             z: table[i].fromAtoms.length + table[i].toAtoms.length,
             widthX: unitsToArrayPoints(sigmaX + minX, minX, maxX, nbPointsX),
-            widthY: unitsToArrayPoints(sigmaY+ minY, minY, maxY, nbPointsY)
-        }
+            widthY: unitsToArrayPoints(sigmaY + minY, minY, maxY, nbPointsY)
+        };
         addPeak(spectraMatrix, peak);
         i++;
     }
@@ -67,7 +71,7 @@ function addPeak(matrix, peak) {
     var nSigma = 4;
     var fromX = Math.max(0, Math.round(peak.x - peak.widthX * nSigma));
     var toX = Math.min(matrix[0].length - 1, Math.round(peak.x + peak.widthX * nSigma));
-    var fromY =  Math.max(0, Math.round(peak.y - peak.widthY * nSigma));
+    var fromY = Math.max(0, Math.round(peak.y - peak.widthY * nSigma));
     var toY = Math.min(matrix.length - 1, Math.round(peak.y + peak.widthY * nSigma));
 
     var squareSigmaX = peak.widthX * peak.widthX;
@@ -76,7 +80,7 @@ function addPeak(matrix, peak) {
         for (var i = fromX; i < toX; i++) {
             var exponent = Math.pow(peak.x - i, 2) / squareSigmaX +
                 Math.pow(peak.y - j, 2) / squareSigmaY;
-            var result = 10000 * peak.z * Math.exp( - exponent);
+            var result = 10000 * peak.z * Math.exp(-exponent);
             matrix[j][i] += result;
         }
     }
