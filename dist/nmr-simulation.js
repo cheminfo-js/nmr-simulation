@@ -73,7 +73,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 20);
+/******/ 	return __webpack_require__(__webpack_require__.s = 18);
 /******/ })
 /************************************************************************/
 /******/ ([
@@ -83,7 +83,7 @@ return /******/ (function(modules) { // webpackBootstrap
 "use strict";
 
 
-__webpack_require__(38);
+__webpack_require__(35);
 var abstractMatrix = __webpack_require__(10);
 var util = __webpack_require__(2);
 
@@ -406,7 +406,7 @@ exports.sumAll = function sumAll(matrix) {
 "use strict";
 
 
-const Heap = __webpack_require__(22);
+const Heap = __webpack_require__(19);
 
 function Cluster() {
     this.children = [];
@@ -539,7 +539,7 @@ exports.getFilled2DArray = function (rows, columns, value) {
 
 
 module.exports = __webpack_require__(0).Matrix;
-module.exports.Decompositions = module.exports.DC = __webpack_require__(37);
+module.exports.Decompositions = module.exports.DC = __webpack_require__(34);
 
 
 /***/ }),
@@ -638,7 +638,7 @@ euclidean.squared = squaredEuclidean;
 
 
 const Cluster = __webpack_require__(3);
-const util = __webpack_require__(52);
+const util = __webpack_require__(53);
 
 function ClusterLeaf(index) {
     Cluster.call(this);
@@ -663,15 +663,15 @@ module.exports = abstractMatrix;
 
 var LuDecomposition = __webpack_require__(11);
 var SvDecomposition = __webpack_require__(12);
-var arrayUtils = __webpack_require__(26);
+var arrayUtils = __webpack_require__(23);
 var util = __webpack_require__(2);
-var MatrixTransposeView = __webpack_require__(45);
-var MatrixRowView = __webpack_require__(42);
-var MatrixSubView = __webpack_require__(44);
-var MatrixSelectionView = __webpack_require__(43);
-var MatrixColumnView = __webpack_require__(39);
-var MatrixFlipRowView = __webpack_require__(41);
-var MatrixFlipColumnView = __webpack_require__(40);
+var MatrixTransposeView = __webpack_require__(42);
+var MatrixRowView = __webpack_require__(39);
+var MatrixSubView = __webpack_require__(41);
+var MatrixSelectionView = __webpack_require__(40);
+var MatrixColumnView = __webpack_require__(36);
+var MatrixFlipRowView = __webpack_require__(38);
+var MatrixFlipColumnView = __webpack_require__(37);
 
 function abstractMatrix(superCtor) {
     if (superCtor === undefined) superCtor = Object;
@@ -3183,7 +3183,7 @@ module.exports = SingularValueDecomposition;
 /* 13 */
 /***/ (function(module, exports, __webpack_require__) {
 
-const HashTable = __webpack_require__(29);
+const HashTable = __webpack_require__(26);
 
 class SparseMatrix {
     constructor(rows, columns, options = {}) {
@@ -3971,7 +3971,7 @@ exports.cumulativeSum = function cumulativeSum(array) {
 
 
 exports.array = __webpack_require__(14);
-exports.matrix = __webpack_require__(47);
+exports.matrix = __webpack_require__(44);
 
 
 /***/ }),
@@ -3980,7 +3980,7 @@ exports.matrix = __webpack_require__(47);
 
 "use strict";
 
-var numberIsNan = __webpack_require__(48);
+var numberIsNan = __webpack_require__(49);
 
 function assertNum(x) {
 	if (typeof x !== 'number' || numberIsNan(x)) {
@@ -4008,313 +4008,10 @@ exports.desc = function (a, b) {
 "use strict";
 
 
-var Matrix = __webpack_require__(5);
-var newArray = __webpack_require__(6);
-var simpleClustering = __webpack_require__(46);
-var hlClust = __webpack_require__(33);
+exports.SpinSystem = __webpack_require__(45);
+exports.simulate1D = __webpack_require__(47);
+exports.simulate2D = __webpack_require__(48);
 
-class SpinSystem {
-    constructor(chemicalShifts, couplingConstants, multiplicity) {
-        this.chemicalShifts = chemicalShifts;
-        this.couplingConstants = couplingConstants;
-        this.multiplicity = multiplicity;
-        this.nSpins = chemicalShifts.length;
-        this._initConnectivity();
-        this._initClusters();
-    }
-
-    static fromSpinusPrediction(result) {
-        var lines = result.split('\n');
-        var nspins = lines.length - 1;
-        var cs = new Array(nspins);
-        var integrals = new Array(nspins);
-        var ids = {};
-        var jc = Matrix.zeros(nspins, nspins);
-        for (var _i = 0; _i < nspins; _i++) {
-            var tokens = lines[_i].split('\t');
-            cs[_i] = +tokens[2];
-            ids[tokens[0] - 1] = _i;
-            integrals[_i] = +tokens[5]; //Is it always 1??
-        }
-        for (var _i2 = 0; _i2 < nspins; _i2++) {
-            tokens = lines[_i2].split('\t');
-            var nCoup = (tokens.length - 4) / 3;
-            for (j = 0; j < nCoup; j++) {
-                var withID = tokens[4 + 3 * j] - 1;
-                var idx = ids[withID];
-                jc[_i2][idx] = +tokens[6 + 3 * j];
-            }
-        }
-
-        for (var j = 0; j < nspins; j++) {
-            for (var i = j; i < nspins; i++) {
-                jc[j][i] = jc[i][j];
-            }
-        }
-        return new SpinSystem(cs, jc, newArray(nspins, 2));
-    }
-
-    static fromPrediction(input) {
-        var predictions = SpinSystem.ungroupAtoms(input);
-        var nSpins = predictions.length;
-        var cs = new Array(nSpins);
-        var jc = Matrix.zeros(nSpins, nSpins);
-        var multiplicity = new Array(nSpins);
-        var ids = {};
-        var i, k, j;
-        for (i = 0; i < nSpins; i++) {
-            cs[i] = predictions[i].delta;
-            ids[predictions[i].atomIDs[0]] = i;
-        }
-        for (i = 0; i < nSpins; i++) {
-            cs[i] = predictions[i].delta;
-            j = predictions[i].j;
-            for (k = 0; k < j.length; k++) {
-                //console.log(ids[result[i].atomIDs[0]],ids[j[k].assignment]);
-                jc[ids[predictions[i].atomIDs[0]]][ids[j[k].assignment]] = j[k].coupling;
-                jc[ids[j[k].assignment]][ids[predictions[i].atomIDs[0]]] = j[k].coupling;
-            }
-            multiplicity[i] = predictions[i].integral + 1;
-        }
-
-        return new SpinSystem(cs, jc, multiplicity);
-    }
-
-    static ungroupAtoms(prediction) {
-        var result = [];
-        prediction.forEach(pred => {
-            var atomIDs = pred.atomIDs;
-            for (var i = 0; i < atomIDs.length; i++) {
-                var tempPred = JSON.parse(JSON.stringify(pred));
-                tempPred.atomIDs = [atomIDs[i]];
-                tempPred.integral = 1;
-                result.push(tempPred);
-            }
-        });
-
-        return result;
-    }
-
-    _initClusters() {
-        this.clusters = simpleClustering(this.connectivity, { out: 'indexes' });
-    }
-
-    _initConnectivity() {
-        var couplings = this.couplingConstants;
-        var connectivity = Matrix.ones(couplings.length, couplings.length);
-        for (var i = 0; i < couplings.length; i++) {
-            for (var j = i; j < couplings[i].length; j++) {
-                if (couplings[i][j] === 0) {
-                    connectivity[i][j] = 0;
-                    connectivity[j][i] = 0;
-                }
-            }
-        }
-        this.connectivity = connectivity;
-    }
-
-    _calculateBetas(J, frequency) {
-        var betas = Matrix.zeros(J.length, J.length);
-        //Before clustering, we must add hidden J, we could use molecular information if available
-        var i, j;
-        for (i = 0; i < J.rows; i++) {
-            for (j = i; j < J.columns; j++) {
-                if (this.chemicalShifts[i] - this.chemicalShifts[j] !== 0) {
-                    betas[i][j] = 1 - Math.abs(J[i][j] / ((this.chemicalShifts[i] - this.chemicalShifts[j]) * frequency));
-                    betas[j][i] = betas[i][j];
-                } else if (!(i === j || J[i][j] !== 0)) {
-                    betas[i][j] = 1;
-                    betas[j][i] = 1;
-                }
-            }
-        }
-        return betas;
-    }
-
-    ensureClusterSize(options) {
-        var betas = this._calculateBetas(this.couplingConstants, options.frequency || 400);
-        var cluster = hlClust.agnes(betas, { isDistanceMatrix: true });
-        var list = [];
-        this._splitCluster(cluster, list, options.maxClusterSize || 8, false);
-        var clusters = this._mergeClusters(list);
-        this.nClusters = clusters.length;
-        //console.log(clusters);
-        this.clusters = new Array(clusters.length);
-        //System.out.println(this.conmatrix);
-        for (var j = 0; j < this.nClusters; j++) {
-            this.clusters[j] = [];
-            for (var i = 0; i < this.nSpins; i++) {
-                if (clusters[j][i] !== 0) {
-                    if (clusters[j][i] < 0) {
-                        this.clusters[j].push(-(i + 1));
-                    } else {
-                        this.clusters[j].push(i);
-                    }
-                }
-            }
-        }
-    }
-
-    /**
-     * Recursively split the clusters until the maxClusterSize criteria has been ensured.
-     * @param cluster
-     * @param clusterList
-     */
-    _splitCluster(cluster, clusterList, maxClusterSize, force) {
-        if (!force && cluster.index.length <= maxClusterSize) {
-            clusterList.push(this._getMembers(cluster));
-        } else {
-            var _iteratorNormalCompletion = true;
-            var _didIteratorError = false;
-            var _iteratorError = undefined;
-
-            try {
-                for (var _iterator = cluster.children[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-                    var child = _step.value;
-
-                    if (!isNaN(child.index) || child.index.length <= maxClusterSize) {
-                        var members = this._getMembers(child);
-                        //Add the neighbors that shares at least 1 coupling with the given cluster
-                        var count = 0;
-                        for (var i = 0; i < this.nSpins; i++) {
-                            if (members[i] === 1) {
-                                count++;
-                                for (var j = 0; j < this.nSpins; j++) {
-                                    if (this.connectivity[i][j] === 1 && members[j] === 0) {
-                                        members[j] = -1;
-                                        count++;
-                                    }
-                                }
-                            }
-                        }
-
-                        if (count <= maxClusterSize) {
-                            clusterList.push(members);
-                        } else {
-                            if (isNaN(child.index)) {
-                                this._splitCluster(child, clusterList, maxClusterSize, true);
-                            } else {
-                                //We have to threat this spin alone and use the resurrection algorithm instead of the simulation
-                                members[child.index] = 2;
-                                clusterList.push(members);
-                            }
-                        }
-                    } else {
-                        this._splitCluster(child, clusterList, maxClusterSize, false);
-                    }
-                }
-            } catch (err) {
-                _didIteratorError = true;
-                _iteratorError = err;
-            } finally {
-                try {
-                    if (!_iteratorNormalCompletion && _iterator.return) {
-                        _iterator.return();
-                    }
-                } finally {
-                    if (_didIteratorError) {
-                        throw _iteratorError;
-                    }
-                }
-            }
-        }
-    }
-    /**
-     * Recursively gets the cluster members
-     * @param cluster
-     * @param members
-     */
-
-    _getMembers(cluster) {
-        var members = new Array(this.nSpins);
-        for (var i = 0; i < this.nSpins; i++) {
-            members[i] = 0;
-        }
-        if (!isNaN(cluster.index)) {
-            members[cluster.index * 1] = 1;
-        } else {
-            var _iteratorNormalCompletion2 = true;
-            var _didIteratorError2 = false;
-            var _iteratorError2 = undefined;
-
-            try {
-                for (var _iterator2 = cluster.index[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
-                    var index = _step2.value;
-
-                    members[index.index * 1] = 1;
-                }
-            } catch (err) {
-                _didIteratorError2 = true;
-                _iteratorError2 = err;
-            } finally {
-                try {
-                    if (!_iteratorNormalCompletion2 && _iterator2.return) {
-                        _iterator2.return();
-                    }
-                } finally {
-                    if (_didIteratorError2) {
-                        throw _iteratorError2;
-                    }
-                }
-            }
-        }
-        return members;
-    }
-
-    _mergeClusters(list) {
-        var nElements = 0;
-        var clusterA, clusterB, i, j, index, common, count;
-        for (i = list.length - 1; i >= 0; i--) {
-            clusterA = list[i];
-            nElements = clusterA.length;
-            index = 0;
-
-            //Is it a candidate to be merged?
-            while (index < nElements && clusterA[index++] !== -1) {}
-
-            if (index < nElements) {
-                for (j = list.length - 1; j >= i + 1; j--) {
-                    clusterB = list[j];
-                    //Do they have common elements?
-                    index = 0;
-                    common = 0;
-                    count = 0;
-                    while (index < nElements) {
-                        if (clusterA[index] * clusterB[index] === -1) {
-                            common++;
-                        }
-                        if (clusterA[index] !== 0 || clusterB[index] !== 0) {
-                            count++;
-                        }
-                        index++;
-                    }
-
-                    if (common > 0 && count <= this.maxClusterSize) {
-                        //Then we can merge those 2 clusters
-                        index = 0;
-                        while (index < nElements) {
-                            if (clusterB[index] === 1) {
-                                clusterA[index] = 1;
-                            } else {
-                                if (clusterB[index] === -1 && clusterA[index] !== 1) {
-                                    clusterA[index] = -1;
-                                }
-                            }
-                            index++;
-                        }
-                        //list.remove(clusterB);
-                        list.splice(j, 1);
-                        j++;
-                    }
-                }
-            }
-        }
-
-        return list;
-    }
-}
-
-module.exports = SpinSystem;
 
 /***/ }),
 /* 18 */
@@ -4323,468 +4020,17 @@ module.exports = SpinSystem;
 "use strict";
 
 
-var Matrix = __webpack_require__(5);
-var SparseMatrix = __webpack_require__(13);
-var binarySearch = __webpack_require__(7);
-var sortAsc = __webpack_require__(16).asc;
-var newArray = __webpack_require__(6);
-
-var getPauli = __webpack_require__(21);
-
-var smallValue = 1e-2;
-
-function simulate1d(spinSystem, options) {
-    var i, j;
-    var frequencyMHz = options.frequency || 400;
-    var from = (options.from || 0) * frequencyMHz;
-    var to = (options.to || 10) * frequencyMHz;
-    var lineWidth = options.lineWidth || 1;
-    var nbPoints = options.nbPoints || 1024;
-    var maxClusterSize = options.maxClusterSize || 10;
-    var output = options.output || 'y';
-
-    var chemicalShifts = spinSystem.chemicalShifts.slice();
-    for (i = 0; i < chemicalShifts.length; i++) {
-        chemicalShifts[i] = chemicalShifts[i] * frequencyMHz;
-    }
-
-    var lineWidthPoints = nbPoints * lineWidth / Math.abs(to - from) / 2.355;
-    var lnPoints = lineWidthPoints * 20;
-
-    var gaussianLength = lnPoints | 0;
-    var gaussian = new Array(gaussianLength);
-    var b = lnPoints / 2;
-    var c = lineWidthPoints * lineWidthPoints * 2;
-    for (i = 0; i < gaussianLength; i++) {
-        gaussian[i] = 1e12 * Math.exp(-((i - b) * (i - b)) / c);
-    }
-
-    var result = new newArray(nbPoints, 0);
-
-    var multiplicity = spinSystem.multiplicity;
-
-    var _loop = function _loop() {
-        var cluster = spinSystem.clusters[h];
-
-        clusterFake = new Array(cluster.length);
-
-        for (i = 0; i < cluster.length; i++) {
-            clusterFake[i] = cluster[i] < 0 ? -cluster[i] - 1 : cluster[i];
-        }
-
-        weight = 1;
-        sumI = 0;
-
-        var frequencies = [];
-        var intensities = [];
-        if (cluster.length > maxClusterSize) {
-            //This is a single spin, but the cluster exceeds the maxClusterSize criteria
-            //we use the simple multiplicity algorithm
-            //Add the central peak. It will be split with every single J coupling.
-            index = 0;
-
-            while (cluster[index++] < 0) {}
-            index = cluster[index - 1];
-
-            frequencies.push(-chemicalShifts[index]);
-            for (i = 0; i < cluster.length; i++) {
-                if (cluster[i] < 0) {
-                    jc = spinSystem.couplingConstants[index][clusterFake[i]] / 2;
-                    currentSize = frequencies.length;
-                    for (j = 0; j < currentSize; j++) {
-                        frequencies.push(frequencies[j] + jc);
-                        frequencies[j] -= jc;
-                    }
-                }
-            }
-
-            frequencies.sort(sortAsc);
-            sumI = frequencies.length;
-            weight = 1;
-
-            for (i = 0; i < sumI; i++) {
-                intensities.push(1);
-            }
-        } else {
-            var hamiltonian = getHamiltonian(chemicalShifts, spinSystem.couplingConstants, multiplicity, spinSystem.connectivity, clusterFake);
-
-            var hamSize = hamiltonian.rows;
-            var evd = new Matrix.DC.EVD(hamiltonian);
-            var V = evd.eigenvectorMatrix;
-            var diagB = evd.realEigenvalues;
-            var assignmentMatrix = new SparseMatrix(hamSize, hamSize);
-            var multLen = cluster.length;
-            weight = 0;
-            for (n = 0; n < multLen; n++) {
-                var L = getPauli(multiplicity[clusterFake[n]]);
-
-                var temp = 1;
-                for (j = 0; j < n; j++) {
-                    temp *= multiplicity[clusterFake[j]];
-                }
-                var A = SparseMatrix.eye(temp);
-
-                temp = 1;
-                for (j = n + 1; j < multLen; j++) {
-                    temp *= multiplicity[clusterFake[j]];
-                }
-                var B = SparseMatrix.eye(temp);
-                var tempMat = A.kroneckerProduct(L.m).kroneckerProduct(B);
-                if (cluster[n] >= 0) {
-                    assignmentMatrix.add(tempMat.mul(cluster[n] + 1));
-                    weight++;
-                } else {
-                    assignmentMatrix.add(tempMat.mul(cluster[n]));
-                }
-            }
-
-            var rhoip = Matrix.zeros(hamSize, hamSize);
-            assignmentMatrix.forEachNonZero((i, j, v) => {
-                if (v > 0) {
-                    var row = V[j];
-                    for (var k = 0; k < row.length; k++) {
-                        if (row[k] !== 0) {
-                            rhoip.set(i, k, rhoip.get(i, k) + row[k]);
-                        }
-                    }
-                }
-                return v;
-            });
-
-            var rhoip2 = rhoip.clone();
-            assignmentMatrix.forEachNonZero((i, j, v) => {
-                if (v < 0) {
-                    var row = V[j];
-                    for (var k = 0; k < row.length; k++) {
-                        if (row[k] !== 0) {
-                            rhoip2.set(i, k, rhoip2.get(i, k) + row[k]);
-                        }
-                    }
-                }
-                return v;
-            });
-
-            var tV = V.transpose();
-            rhoip = tV.mmul(rhoip);
-            rhoip = new SparseMatrix(rhoip, { threshold: smallValue });
-            triuTimesAbs(rhoip, smallValue);
-            rhoip2 = tV.mmul(rhoip2);
-            rhoip2 = new SparseMatrix(rhoip2, { threshold: smallValue });
-            triuTimesAbs(rhoip2, smallValue);
-
-            rhoip2.forEachNonZero((i, j, v) => {
-                var val = rhoip.get(i, j);
-                val = Math.min(Math.abs(val), Math.abs(v));
-                val *= val;
-
-                sumI += val;
-                var valFreq = diagB[i] - diagB[j];
-                var insertIn = binarySearch(frequencies, valFreq, sortAsc);
-                if (insertIn < 0) {
-                    frequencies.splice(-1 - insertIn, 0, valFreq);
-                    intensities.splice(-1 - insertIn, 0, val);
-                } else {
-                    intensities[insertIn] += val;
-                }
-            });
-        }
-        var numFreq = frequencies.length;
-        if (numFreq > 0) {
-            weight = weight / sumI;
-            var diff = lineWidth / 32;
-            var valFreq = frequencies[0];
-            var inte = intensities[0];
-            var count = 1;
-            for (i = 1; i < numFreq; i++) {
-                if (Math.abs(frequencies[i] - valFreq / count) < diff) {
-                    inte += intensities[i];
-                    valFreq += frequencies[i];
-                    count++;
-                } else {
-                    addPeak(result, valFreq / count, inte * weight, from, to, nbPoints, gaussian);
-                    valFreq = frequencies[i];
-                    inte = intensities[i];
-                    count = 1;
-                }
-            }
-            addPeak(result, valFreq / count, inte * weight, from, to, nbPoints, gaussian);
-        }
-    };
-
-    for (var h = 0; h < spinSystem.clusters.length; h++) {
-        var clusterFake;
-        var weight;
-        var sumI;
-        var index;
-        var currentSize, jc;
-        var n;
-
-        _loop();
-    }
-    if (output === 'xy') {
-        return { x: _getX(options.from, options.to, nbPoints), y: result };
-    }
-    if (output === 'y') {
-        return result;
-    }
-    throw new RangeError('wrong output option');
-}
-
-function addPeak(result, freq, height, from, to, nbPoints, gaussian) {
-    var center = nbPoints * (-freq - from) / (to - from) | 0;
-    var lnPoints = gaussian.length;
-    var index = 0;
-    var indexLorentz = 0;
-    for (var i = center - lnPoints / 2; i < center + lnPoints / 2; i++) {
-        index = i | 0;
-        if (i >= 0 && i < nbPoints) {
-            result[index] = result[index] + gaussian[indexLorentz] * height;
-        }
-        indexLorentz++;
-    }
-}
-
-function triuTimesAbs(A, val) {
-    A.forEachNonZero((i, j, v) => {
-        if (i > j) return 0;
-        if (Math.abs(v) <= val) return 0;
-        return v;
-    });
-}
-
-function getHamiltonian(chemicalShifts, couplingConstants, multiplicity, conMatrix, cluster) {
-    var hamSize = 1;
-    for (var i = 0; i < cluster.length; i++) {
-        hamSize *= multiplicity[cluster[i]];
-    }
-
-    var clusterHam = new SparseMatrix(hamSize, hamSize);
-
-    for (var pos = 0; pos < cluster.length; pos++) {
-        var n = cluster[pos];
-
-        var L = getPauli(multiplicity[n]);
-
-        var A1 = void 0,
-            B1 = void 0;
-        var temp = 1;
-        for (var _i = 0; _i < pos; _i++) {
-            temp *= multiplicity[cluster[_i]];
-        }
-        A1 = SparseMatrix.eye(temp);
-
-        temp = 1;
-        for (var _i2 = pos + 1; _i2 < cluster.length; _i2++) {
-            temp *= multiplicity[cluster[_i2]];
-        }
-        B1 = SparseMatrix.eye(temp);
-
-        var alpha = chemicalShifts[n];
-        var kronProd = A1.kroneckerProduct(L.z).kroneckerProduct(B1);
-        clusterHam.add(kronProd.mul(alpha));
-
-        for (var pos2 = 0; pos2 < cluster.length; pos2++) {
-            var k = cluster[pos2];
-            if (conMatrix[n][k] === 1) {
-                var S = getPauli(multiplicity[k]);
-
-                var A2 = void 0,
-                    B2 = void 0;
-                var _temp = 1;
-                for (var _i3 = 0; _i3 < pos2; _i3++) {
-                    _temp *= multiplicity[cluster[_i3]];
-                }
-                A2 = SparseMatrix.eye(_temp);
-
-                _temp = 1;
-                for (var _i4 = pos2 + 1; _i4 < cluster.length; _i4++) {
-                    _temp *= multiplicity[cluster[_i4]];
-                }
-                B2 = SparseMatrix.eye(_temp);
-
-                var kron1 = A1.kroneckerProduct(L.x).kroneckerProduct(B1).mmul(A2.kroneckerProduct(S.x).kroneckerProduct(B2));
-                kron1.add(A1.kroneckerProduct(L.y).kroneckerProduct(B1).mul(-1).mmul(A2.kroneckerProduct(S.y).kroneckerProduct(B2)));
-                kron1.add(A1.kroneckerProduct(L.z).kroneckerProduct(B1).mmul(A2.kroneckerProduct(S.z).kroneckerProduct(B2)));
-
-                clusterHam.add(kron1.mul(couplingConstants[n][k] / 2));
-            }
-        }
-    }
-
-    return clusterHam;
-}
-
-function _getX(from, to, nbPoints) {
-    var x = new Array(nbPoints);
-    var dx = (to - from) / (nbPoints - 1);
-    for (var i = 0; i < nbPoints; i++) {
-        x[i] = from + i * dx;
-    }
-    return x;
-}
-
-module.exports = simulate1d;
+module.exports = __webpack_require__(17);
 
 /***/ }),
 /* 19 */
 /***/ (function(module, exports, __webpack_require__) {
 
-"use strict";
+module.exports = __webpack_require__(20);
 
-
-var Matrix = __webpack_require__(5);
-
-var defOptions = { 'H': { frequency: 400, lineWidth: 10 }, 'C': { frequency: 100, lineWidth: 10 } };
-
-function simule2DNmrSpectrum(table, options) {
-    var i;
-    var fromLabel = table[0].fromAtomLabel;
-    var toLabel = table[0].toLabel;
-    var frequencyX = options.frequencyX || defOptions[fromLabel].frequency;
-    var frequencyY = options.frequencyY || defOptions[toLabel].frequency;
-    var lineWidthX = options.lineWidthX || defOptions[fromLabel].lineWidth;
-    var lineWidthY = options.lineWidthY || defOptions[toLabel].lineWidth;
-
-    var sigmaX = lineWidthX / frequencyX;
-    var sigmaY = lineWidthY / frequencyY;
-
-    var minX = table[0].fromChemicalShift;
-    var maxX = table[0].fromChemicalShift;
-    var minY = table[0].toChemicalShift;
-    var maxY = table[0].toChemicalShift;
-    i = 1;
-    while (i < table.length) {
-        minX = Math.min(minX, table[i].fromChemicalShift);
-        maxX = Math.max(maxX, table[i].fromChemicalShift);
-        minY = Math.min(minY, table[i].toChemicalShift);
-        maxY = Math.max(maxY, table[i].toChemicalShift);
-        i++;
-    }
-
-    if (options.firstX !== null && !isNaN(options.firstX)) {
-        minX = options.firstX;
-    }
-    if (options.firstY !== null && !isNaN(options.firstY)) {
-        minY = options.firstY;
-    }
-    if (options.lastX !== null && !isNaN(options.lastX)) {
-        maxX = options.lastX;
-    }
-    if (options.lastY !== null && !isNaN(options.lastY)) {
-        maxY = options.lastY;
-    }
-
-    var nbPointsX = options.nbPointsX || 512;
-    var nbPointsY = options.nbPointsY || 512;
-
-    var spectraMatrix = new Matrix(nbPointsY, nbPointsX).fill(0);
-    i = 0;
-    while (i < table.length) {
-        //parameters.couplingConstant = table[i].j;
-        //parameters.pathLength = table[i].pathLength;
-        var peak = {
-            x: unitsToArrayPoints(table[i].fromChemicalShift, minX, maxX, nbPointsX),
-            y: unitsToArrayPoints(table[i].toChemicalShift, minY, maxY, nbPointsY),
-            z: table[i].fromAtoms.length + table[i].toAtoms.length,
-            widthX: unitsToArrayPoints(sigmaX + minX, minX, maxX, nbPointsX),
-            widthY: unitsToArrayPoints(sigmaY + minY, minY, maxY, nbPointsY)
-        };
-        addPeak(spectraMatrix, peak);
-        i++;
-    }
-    return spectraMatrix;
-}
-
-function unitsToArrayPoints(x, from, to, nbPoints) {
-    return ((x - from) * nbPoints - 1) / (to - from);
-}
-
-function addPeak(matrix, peak) {
-    var nSigma = 4;
-    var fromX = Math.max(0, Math.round(peak.x - peak.widthX * nSigma));
-    var toX = Math.min(matrix[0].length - 1, Math.round(peak.x + peak.widthX * nSigma));
-    var fromY = Math.max(0, Math.round(peak.y - peak.widthY * nSigma));
-    var toY = Math.min(matrix.length - 1, Math.round(peak.y + peak.widthY * nSigma));
-
-    var squareSigmaX = peak.widthX * peak.widthX;
-    var squareSigmaY = peak.widthY * peak.widthY;
-    for (var j = fromY; j < toY; j++) {
-        for (var i = fromX; i < toX; i++) {
-            var exponent = Math.pow(peak.x - i, 2) / squareSigmaX + Math.pow(peak.y - j, 2) / squareSigmaY;
-            var result = 10000 * peak.z * Math.exp(-exponent);
-            matrix[j][i] += result;
-        }
-    }
-}
-
-module.exports = simule2DNmrSpectrum;
 
 /***/ }),
 /* 20 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-exports.SpinSystem = __webpack_require__(17);
-exports.simulate1D = __webpack_require__(18);
-exports.simulate2D = __webpack_require__(19);
-
-/***/ }),
-/* 21 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-var SparseMatrix = __webpack_require__(13);
-
-function createPauli(mult) {
-    var spin = (mult - 1) / 2;
-    var prjs = new Array(mult);
-    var temp = new Array(mult);
-    for (var i = 0; i < mult; i++) {
-        prjs[i] = mult - 1 - i - spin;
-        temp[i] = Math.sqrt(spin * (spin + 1) - prjs[i] * (prjs[i] + 1));
-    }
-    var p = diag(temp, 1, mult, mult);
-    for (i = 0; i < mult; i++) {
-        temp[i] = Math.sqrt(spin * (spin + 1) - prjs[i] * (prjs[i] - 1));
-    }
-    var m = diag(temp, -1, mult, mult);
-    var x = p.clone().add(m).mul(0.5);
-    var y = m.clone().mul(-1).add(p).mul(-0.5);
-    var z = diag(prjs, 0, mult, mult);
-    return { x, y, z, m, p };
-}
-
-function diag(A, d, n, m) {
-    var diag = new SparseMatrix(n, m, { initialCapacity: 20 });
-    for (var i = 0; i < A.length; i++) {
-        if (i - d >= 0 && i - d < n && i < m) {
-            diag.set(i - d, i, A[i]);
-        }
-    }
-    return diag;
-}
-
-var pauli2 = createPauli(2);
-
-function getPauli(mult) {
-    if (mult === 2) return pauli2;else return createPauli(mult);
-}
-
-module.exports = getPauli;
-
-/***/ }),
-/* 22 */
-/***/ (function(module, exports, __webpack_require__) {
-
-module.exports = __webpack_require__(23);
-
-
-/***/ }),
-/* 23 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;// Generated by CoffeeScript 1.8.0
@@ -5168,7 +4414,7 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
 
 
 /***/ }),
-/* 24 */
+/* 21 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -5400,7 +4646,7 @@ module.exports = {
 
 
 /***/ }),
-/* 25 */
+/* 22 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -5660,18 +4906,18 @@ exports.getEquallySpacedData = getEquallySpacedData;
 exports.integral = integral;
 
 /***/ }),
-/* 26 */
+/* 23 */
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = exports = __webpack_require__(24);
+module.exports = exports = __webpack_require__(21);
 
 
-exports.getEquallySpacedData = __webpack_require__(25).getEquallySpacedData;
-exports.SNV = __webpack_require__(27).SNV;
+exports.getEquallySpacedData = __webpack_require__(22).getEquallySpacedData;
+exports.SNV = __webpack_require__(24).SNV;
 
 
 /***/ }),
-/* 27 */
+/* 24 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -5698,7 +4944,7 @@ function SNV(data) {
 
 
 /***/ }),
-/* 28 */
+/* 25 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -5737,7 +4983,7 @@ module.exports = distanceMatrix;
 
 
 /***/ }),
-/* 29 */
+/* 26 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -5745,7 +4991,7 @@ module.exports = distanceMatrix;
 
 const newArray = __webpack_require__(6);
 
-const primeFinder = __webpack_require__(30);
+const primeFinder = __webpack_require__(27);
 const nextPrime = primeFinder.nextPrime;
 const largestPrime = primeFinder.largestPrime;
 
@@ -6047,7 +5293,7 @@ function chooseShrinkCapacity(size, minLoad, maxLoad) {
 
 
 /***/ }),
-/* 30 */
+/* 27 */
 /***/ (function(module, exports, __webpack_require__) {
 
 const binarySearch = __webpack_require__(7);
@@ -6139,7 +5385,7 @@ exports.largestPrime = largestPrime;
 
 
 /***/ }),
-/* 31 */
+/* 28 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -6148,7 +5394,7 @@ exports.largestPrime = largestPrime;
 const euclidean = __webpack_require__(8);
 const ClusterLeaf = __webpack_require__(9);
 const Cluster = __webpack_require__(3);
-const distanceMatrix = __webpack_require__(28);
+const distanceMatrix = __webpack_require__(25);
 
 /**
  * @private
@@ -6389,7 +5635,7 @@ module.exports = agnes;
 
 
 /***/ }),
-/* 32 */
+/* 29 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -6702,21 +5948,21 @@ module.exports = diana;
 
 
 /***/ }),
-/* 33 */
+/* 30 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
-exports.agnes = __webpack_require__(31);
-exports.diana = __webpack_require__(32);
+exports.agnes = __webpack_require__(28);
+exports.diana = __webpack_require__(29);
 //exports.birch = require('./birch');
 //exports.cure = require('./cure');
 //exports.chameleon = require('./chameleon');
 
 
 /***/ }),
-/* 34 */
+/* 31 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -6813,7 +6059,7 @@ module.exports = CholeskyDecomposition;
 
 
 /***/ }),
-/* 35 */
+/* 32 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -7600,7 +6846,7 @@ module.exports = EigenvalueDecomposition;
 
 
 /***/ }),
-/* 36 */
+/* 33 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -7759,7 +7005,7 @@ module.exports = QrDecomposition;
 
 
 /***/ }),
-/* 37 */
+/* 34 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -7768,10 +7014,10 @@ module.exports = QrDecomposition;
 var Matrix = __webpack_require__(0).Matrix;
 
 var SingularValueDecomposition = __webpack_require__(12);
-var EigenvalueDecomposition = __webpack_require__(35);
+var EigenvalueDecomposition = __webpack_require__(32);
 var LuDecomposition = __webpack_require__(11);
-var QrDecomposition = __webpack_require__(36);
-var CholeskyDecomposition = __webpack_require__(34);
+var QrDecomposition = __webpack_require__(33);
+var CholeskyDecomposition = __webpack_require__(31);
 
 function inverse(matrix) {
     matrix = Matrix.checkMatrix(matrix);
@@ -7828,7 +7074,7 @@ module.exports = {
 
 
 /***/ }),
-/* 38 */
+/* 35 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -7840,7 +7086,7 @@ if (!Symbol.species) {
 
 
 /***/ }),
-/* 39 */
+/* 36 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -7868,7 +7114,7 @@ module.exports = MatrixColumnView;
 
 
 /***/ }),
-/* 40 */
+/* 37 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -7895,7 +7141,7 @@ module.exports = MatrixFlipColumnView;
 
 
 /***/ }),
-/* 41 */
+/* 38 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -7922,7 +7168,7 @@ module.exports = MatrixFlipRowView;
 
 
 /***/ }),
-/* 42 */
+/* 39 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -7950,7 +7196,7 @@ module.exports = MatrixRowView;
 
 
 /***/ }),
-/* 43 */
+/* 40 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -7981,7 +7227,7 @@ module.exports = MatrixSelectionView;
 
 
 /***/ }),
-/* 44 */
+/* 41 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -8012,7 +7258,7 @@ module.exports = MatrixSubView;
 
 
 /***/ }),
-/* 45 */
+/* 42 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -8039,7 +7285,7 @@ module.exports = MatrixTransposeView;
 
 
 /***/ }),
-/* 46 */
+/* 43 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -8154,7 +7400,7 @@ function fullClusterGeneratorVector(conn){
 }
 
 /***/ }),
-/* 47 */
+/* 44 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -8772,7 +8018,743 @@ exports.weightedScatter = function weightedScatter(matrix, weights, means, facto
 
 
 /***/ }),
+/* 45 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+const Matrix = __webpack_require__(5);
+const newArray = __webpack_require__(6);
+const simpleClustering = __webpack_require__(43);
+const hlClust = __webpack_require__(30);
+
+class SpinSystem {
+    constructor(chemicalShifts, couplingConstants, multiplicity) {
+        this.chemicalShifts = chemicalShifts;
+        this.couplingConstants = couplingConstants;
+        this.multiplicity = multiplicity;
+        this.nSpins = chemicalShifts.length;
+        this._initConnectivity();
+        this._initClusters();
+    }
+
+    static fromSpinusPrediction(result) {
+        var lines = result.split('\n');
+        var nspins = lines.length - 1;
+        var cs = new Array(nspins);
+        var integrals = new Array(nspins);
+        var ids = {};
+        var jc = Matrix.zeros(nspins, nspins);
+        for (let i = 0; i < nspins; i++) {
+            var tokens = lines[i].split('\t');
+            cs[i] = +tokens[2];
+            ids[tokens[0] - 1] = i;
+            integrals[i] = +tokens[5];//Is it always 1??
+        }
+        for (let i = 0; i < nspins; i++) {
+            tokens = lines[i].split('\t');
+            var nCoup = (tokens.length - 4) / 3;
+            for (j = 0; j < nCoup; j++) {
+                var withID = tokens[4 + 3 * j] - 1;
+                var idx = ids[withID];
+                jc[i][idx] = +tokens[6 + 3 * j];
+            }
+        }
+
+        for (var j = 0; j < nspins; j++) {
+            for (var i = j; i < nspins; i++) {
+                jc[j][i] = jc[i][j];
+            }
+        }
+        return new SpinSystem(cs, jc, newArray(nspins, 2));
+    }
+
+    static fromPrediction(input) {
+        // console.log(JSON.stringify(input))
+        let predictions = SpinSystem.ungroupAtoms(input);
+        // console.log(JSON.stringify(predictions));
+        const nSpins = predictions.length;
+        const cs = new Array(nSpins);
+        const jc = Matrix.zeros(nSpins, nSpins);
+        const multiplicity = new Array(nSpins);
+        const ids = {};
+        var i, k, j;
+        for (i = 0; i < nSpins; i++) {
+            cs[i] = predictions[i].delta;
+            ids[predictions[i].atomIDs[0]] = i;
+        }
+        for (i = 0; i < nSpins; i++) {
+            cs[i] = predictions[i].delta;
+            j = predictions[i].j;
+            for (k = 0; k < j.length; k++) {
+                jc[ids[predictions[i].atomIDs[0]]][ids[j[k].assignment]] = j[k].coupling;
+                jc[ids[j[k].assignment]][ids[predictions[i].atomIDs[0]]] = j[k].coupling;
+            }
+            multiplicity[i] = predictions[i].integral + 1;
+        }
+
+        return new SpinSystem(cs, jc, multiplicity);
+    }
+
+
+    static ungroupAtoms(prediction) {
+        let result = [];
+        prediction.forEach(pred => {
+            let atomIDs = pred.atomIDs;
+            for (let i = 0; i < atomIDs.length; i++) {
+                let tempPred = JSON.parse(JSON.stringify(pred));
+                let nmrJ = [];
+                tempPred.atomIDs = [atomIDs[i]];
+                tempPred.integral = 1;
+                for (let j = 0; j < tempPred.j.length; j++) {
+                    let assignment = tempPred.j[j].assignment;
+                    for (let k = 0; k < assignment.length; k++) {
+                        let tempJ = JSON.parse(JSON.stringify(tempPred.j[j]));
+                        tempJ.assignment = assignment[k];
+                        nmrJ.push(tempJ);
+                    }
+                }
+                tempPred.j = nmrJ;
+                delete tempPred.nbAtoms;
+                result.push(tempPred);
+            }
+        });
+
+        return result;
+    }
+
+
+    _initClusters() {
+        this.clusters = simpleClustering(this.connectivity, {out: 'indexes'});
+    }
+
+    _initConnectivity() {
+        const couplings = this.couplingConstants;
+        const connectivity = Matrix.ones(couplings.length, couplings.length);
+        for (var i = 0; i < couplings.length; i++) {
+            for (var j = i; j < couplings[i].length; j++) {
+                if (couplings[i][j] === 0) {
+                    connectivity[i][j] = 0;
+                    connectivity[j][i] = 0;
+                }
+            }
+        }
+        this.connectivity = connectivity;
+    }
+
+
+    _calculateBetas(J, frequency) {
+        var betas = Matrix.zeros(J.length, J.length);
+        //Before clustering, we must add hidden J, we could use molecular information if available
+        var i, j;
+        for (i = 0; i < J.rows; i++) {
+            for (j = i; j < J.columns; j++) {
+                if ((this.chemicalShifts[i] - this.chemicalShifts[j]) !== 0) {
+                    betas[i][j] = 1 - Math.abs(J[i][j] / ((this.chemicalShifts[i] - this.chemicalShifts[j]) * frequency));
+                    betas[j][i] = betas[i][j];
+                } else if (!(i === j || J[i][j] !== 0)) {
+                    betas[i][j] = 1;
+                    betas[j][i] = 1;
+                }
+            }
+        }
+        return betas;
+    }
+
+    ensureClusterSize(options) {
+        var betas = this._calculateBetas(this.couplingConstants, options.frequency || 400);
+        var cluster = hlClust.agnes(betas, {isDistanceMatrix: true});
+        var list = [];
+        this._splitCluster(cluster, list, options.maxClusterSize || 8, false);
+        var clusters = this._mergeClusters(list);
+        this.nClusters = clusters.length;
+        //console.log(clusters);
+        this.clusters = new Array(clusters.length);
+        //System.out.println(this.conmatrix);
+        for (var j = 0; j < this.nClusters; j++) {
+            this.clusters[j] = [];
+            for (var i = 0; i < this.nSpins; i++) {
+                if (clusters[j][i] !== 0) {
+                    if (clusters[j][i] < 0) {
+                        this.clusters[j].push(-(i + 1));
+                    } else {
+                        this.clusters[j].push(i);
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Recursively split the clusters until the maxClusterSize criteria has been ensured.
+     * @param {Array} cluster
+     * @param {Array} clusterList
+     * @param {number} maxClusterSize
+     * @param  {boolean} force
+     */
+    _splitCluster(cluster, clusterList, maxClusterSize, force) {
+        if (!force && cluster.index.length <= maxClusterSize) {
+            clusterList.push(this._getMembers(cluster));
+        } else {
+            for (var child of cluster.children) {
+                if (!isNaN(child.index) || child.index.length <= maxClusterSize) {
+                    var members = this._getMembers(child);
+                    //Add the neighbors that shares at least 1 coupling with the given cluster
+                    var count = 0;
+                    for (var i = 0; i < this.nSpins; i++) {
+                        if (members[i] === 1) {
+                            count++;
+                            for (var j = 0; j < this.nSpins; j++) {
+                                if (this.connectivity[i][j] === 1 && members[j] === 0) {
+                                    members[j] = -1;
+                                    count++;
+                                }
+                            }
+                        }
+                    }
+
+                    if (count <= maxClusterSize) {
+                        clusterList.push(members);
+                    } else {
+                        if (isNaN(child.index)) {
+                            this._splitCluster(child, clusterList, maxClusterSize, true);
+                        } else {
+                            //We have to threat this spin alone and use the resurrection algorithm instead of the simulation
+                            members[child.index] = 2;
+                            clusterList.push(members);
+                        }
+                    }
+                } else {
+                    this._splitCluster(child, clusterList, maxClusterSize, false);
+                }
+            }
+        }
+    }
+    /**
+     * Recursively gets the cluster members
+     * @param cluster
+     * @param members
+     */
+
+    _getMembers(cluster) {
+        var members = new Array(this.nSpins);
+        for (var i = 0; i < this.nSpins; i++) {
+            members[i] = 0;
+        }
+        if (!isNaN(cluster.index)) {
+            members[cluster.index * 1] = 1;
+        } else {
+            for (var index of cluster.index) {
+                members[index.index * 1] = 1;
+            }
+        }
+        return members;
+    }
+
+    _mergeClusters(list) {
+        var nElements = 0;
+        var clusterA, clusterB, i, j, index, common, count;
+        for (i = list.length - 1; i >= 0; i--) {
+            clusterA = list[i];
+            nElements = clusterA.length;
+            index = 0;
+
+            //Is it a candidate to be merged?
+            while (index < nElements && clusterA[index++] !== -1);
+
+            if (index < nElements) {
+                for (j = list.length - 1; j >= i + 1; j--) {
+                    clusterB = list[j];
+                    //Do they have common elements?
+                    index = 0;
+                    common = 0;
+                    count = 0;
+                    while (index < nElements) {
+                        if (clusterA[index] * clusterB[index] === -1) {
+                            common++;
+                        }
+                        if (clusterA[index] !== 0 || clusterB[index] !== 0) {
+                            count++;
+                        }
+                        index++;
+                    }
+
+                    if (common > 0 && count <= this.maxClusterSize) {
+                        //Then we can merge those 2 clusters
+                        index = 0;
+                        while (index < nElements) {
+                            if (clusterB[index] === 1) {
+                                clusterA[index] = 1;
+                            } else {
+                                if (clusterB[index] === -1 && clusterA[index] !== 1) {
+                                    clusterA[index] = -1;
+                                }
+                            }
+                            index++;
+                        }
+                        //list.remove(clusterB);
+                        list.splice(j, 1);
+                        j++;
+                    }
+                }
+            }
+        }
+
+        return list;
+    }
+}
+
+module.exports = SpinSystem;
+
+
+/***/ }),
+/* 46 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+const SparseMatrix = __webpack_require__(13);
+
+function createPauli(mult) {
+    const spin = (mult - 1) / 2;
+    const prjs = new Array(mult);
+    const temp = new Array(mult);
+    for (var i = 0; i < mult; i++) {
+        prjs[i] = (mult - 1) - i - spin;
+        temp[i] = Math.sqrt(spin * (spin + 1) - prjs[i] * (prjs[i] + 1));
+    }
+    const p = diag(temp, 1, mult, mult);
+    for (i = 0; i < mult; i++) {
+        temp[i] = Math.sqrt(spin * (spin + 1) - prjs[i] * (prjs[i] - 1));
+    }
+    const m = diag(temp, -1, mult, mult);
+    const x = p.clone().add(m).mul(0.5);
+    const y = m.clone().mul(-1).add(p).mul(-0.5);
+    const z = diag(prjs, 0, mult, mult);
+    return {x, y, z, m, p};
+}
+
+function diag(A, d, n, m) {
+    const diag = new SparseMatrix(n, m, {initialCapacity: 20});
+    for (var i = 0; i < A.length; i++) {
+        if ((i - d) >= 0 && (i - d) < n && i < m) {
+            diag.set(i - d, i, A[i]);
+        }
+    }
+    return diag;
+}
+
+const pauli2 = createPauli(2);
+
+function getPauli(mult) {
+    if (mult === 2) return pauli2;
+    else return createPauli(mult);
+}
+
+module.exports = getPauli;
+
+
+/***/ }),
+/* 47 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+const Matrix = __webpack_require__(5);
+const SparseMatrix = __webpack_require__(13);
+const binarySearch = __webpack_require__(7);
+const sortAsc = __webpack_require__(16).asc;
+const newArray = __webpack_require__(6);
+
+const getPauli = __webpack_require__(46);
+
+const smallValue = 1e-2;
+
+function simulate1d(spinSystem, options) {
+    var i, j;
+    const frequencyMHz = (options.frequency || 400);
+    const from = (options.from || 0) * frequencyMHz;
+    const to = (options.to || 10) * frequencyMHz;
+    const lineWidth = options.lineWidth || 1;
+    const nbPoints = options.nbPoints || 1024;
+    const maxClusterSize = options.maxClusterSize || 10;
+    const output = options.output || 'y';
+
+    const chemicalShifts = spinSystem.chemicalShifts.slice();
+    for (i = 0; i < chemicalShifts.length; i++) {
+        chemicalShifts[i] = chemicalShifts[i] * frequencyMHz;
+    }
+
+    let lineWidthPoints = (nbPoints * lineWidth / Math.abs(to - from)) / 2.355;
+    let lnPoints = lineWidthPoints * 20;
+
+    const gaussianLength = lnPoints | 0;
+    const gaussian = new Array(gaussianLength);
+    const b = lnPoints / 2;
+    const c = lineWidthPoints * lineWidthPoints * 2;
+    for (i = 0; i < gaussianLength; i++) {
+        gaussian[i] = 1e12 * Math.exp(-((i - b) * (i - b)) / c);
+    }
+
+    const result = new newArray(nbPoints, 0);
+
+    const multiplicity = spinSystem.multiplicity;
+    for (var h = 0; h < spinSystem.clusters.length; h++) {
+        const cluster = spinSystem.clusters[h];
+
+        var clusterFake = new Array(cluster.length);
+        for (i = 0; i < cluster.length; i++) {
+            clusterFake[i] = cluster[i] < 0 ? -cluster[i] - 1 : cluster[i];
+        }
+
+        var weight = 1;
+        var sumI = 0;
+        const frequencies = [];
+        const intensities = [];
+        if (cluster.length > maxClusterSize) {
+            //This is a single spin, but the cluster exceeds the maxClusterSize criteria
+            //we use the simple multiplicity algorithm
+            //Add the central peak. It will be split with every single J coupling.
+            var index = 0;
+            while (cluster[index++] < 0);
+            index = cluster[index - 1];
+            var currentSize, jc;
+            frequencies.push(-chemicalShifts[index]);
+            for (i = 0; i < cluster.length; i++) {
+                if (cluster[i] < 0) {
+                    jc = spinSystem.couplingConstants[index][clusterFake[i]] / 2;
+                    currentSize = frequencies.length;
+                    for (j = 0; j < currentSize; j++) {
+                        frequencies.push(frequencies[j] + jc);
+                        frequencies[j] -= jc;
+                    }
+                }
+            }
+
+            frequencies.sort(sortAsc);
+            sumI = frequencies.length;
+            weight = 1;
+
+            for (i = 0; i < sumI; i++) {
+                intensities.push(1);
+            }
+
+        } else {
+            const hamiltonian = getHamiltonian(
+                chemicalShifts,
+                spinSystem.couplingConstants,
+                multiplicity,
+                spinSystem.connectivity,
+                clusterFake
+            );
+
+            const hamSize = hamiltonian.rows;
+            const evd = new Matrix.DC.EVD(hamiltonian);
+            const V = evd.eigenvectorMatrix;
+            const diagB = evd.realEigenvalues;
+            const assignmentMatrix = new SparseMatrix(hamSize, hamSize);
+            const multLen = cluster.length;
+            weight = 0;
+            for (var n = 0; n < multLen; n++) {
+                const L = getPauli(multiplicity[clusterFake[n]]);
+
+                let temp = 1;
+                for (j = 0; j < n; j++) {
+                    temp *= multiplicity[clusterFake[j]];
+                }
+                const A = SparseMatrix.eye(temp);
+
+                temp = 1;
+                for (j = n + 1; j < multLen; j++) {
+                    temp *= multiplicity[clusterFake[j]];
+                }
+                const B = SparseMatrix.eye(temp);
+                const tempMat = A.kroneckerProduct(L.m).kroneckerProduct(B);
+                if (cluster[n] >= 0) {
+                    assignmentMatrix.add(tempMat.mul(cluster[n] + 1));
+                    weight++;
+                } else {
+                    assignmentMatrix.add(tempMat.mul(cluster[n]));
+                }
+            }
+
+            let rhoip = Matrix.zeros(hamSize, hamSize);
+            assignmentMatrix.forEachNonZero((i, j, v) => {
+                if (v > 0) {
+                    const row = V[j];
+                    for (var k = 0; k < row.length; k++) {
+                        if (row[k] !== 0) {
+                            rhoip.set(i, k, rhoip.get(i, k) + row[k]);
+                        }
+                    }
+                }
+                return v;
+            });
+
+            let rhoip2 = rhoip.clone();
+            assignmentMatrix.forEachNonZero((i, j, v) => {
+                if (v < 0) {
+                    const row = V[j];
+                    for (var k = 0; k < row.length; k++) {
+                        if (row[k] !== 0) {
+                            rhoip2.set(i, k, rhoip2.get(i, k) + row[k]);
+                        }
+                    }
+                }
+                return v;
+            });
+
+            const tV = V.transpose();
+            rhoip = tV.mmul(rhoip);
+            rhoip = new SparseMatrix(rhoip, {threshold: smallValue});
+            triuTimesAbs(rhoip, smallValue);
+            rhoip2 = tV.mmul(rhoip2);
+            rhoip2 = new SparseMatrix(rhoip2, {threshold: smallValue});
+            triuTimesAbs(rhoip2, smallValue);
+
+            rhoip2.forEachNonZero((i, j, v) => {
+                var val = rhoip.get(i, j);
+                val = Math.min(Math.abs(val), Math.abs(v));
+                val *= val;
+
+                sumI += val;
+                var valFreq = diagB[i] - diagB[j];
+                var insertIn = binarySearch(frequencies, valFreq, sortAsc);
+                if (insertIn < 0) {
+                    frequencies.splice(-1 - insertIn, 0, valFreq);
+                    intensities.splice(-1 - insertIn, 0, val);
+                } else {
+                    intensities[insertIn] += val;
+                }
+            });
+        }
+        const numFreq = frequencies.length;
+        if (numFreq > 0) {
+            weight = weight / sumI;
+            const diff = lineWidth / 32;
+            let valFreq = frequencies[0];
+            let inte = intensities[0];
+            let count = 1;
+            for (i = 1; i < numFreq; i++) {
+                if (Math.abs(frequencies[i] - valFreq / count) < diff) {
+                    inte += intensities[i];
+                    valFreq += frequencies[i];
+                    count++;
+                } else {
+                    addPeak(result, valFreq / count, inte * weight, from, to, nbPoints, gaussian);
+                    valFreq = frequencies[i];
+                    inte = intensities[i];
+                    count = 1;
+                }
+            }
+            addPeak(result, valFreq / count, inte * weight, from, to, nbPoints, gaussian);
+        }
+    }
+    if (output === 'xy') {
+        return {x: _getX(options.from, options.to, nbPoints), y: result};
+    }
+    if (output === 'y') {
+        return result;
+    }
+    throw new RangeError('wrong output option');
+}
+
+function addPeak(result, freq, height, from, to, nbPoints, gaussian) {
+    const center = (nbPoints * (-freq - from) / (to - from)) | 0;
+    const lnPoints = gaussian.length;
+    var index = 0;
+    var indexLorentz = 0;
+    for (var i = center - lnPoints / 2; i < center + lnPoints / 2; i++) {
+        index = i | 0;
+        if (i >= 0 && i < nbPoints) {
+            result[index] = result[index] + gaussian[indexLorentz] * height;
+        }
+        indexLorentz++;
+    }
+}
+
+function triuTimesAbs(A, val) {
+    A.forEachNonZero((i, j, v) => {
+        if (i > j) return 0;
+        if (Math.abs(v) <= val) return 0;
+        return v;
+    });
+}
+
+function getHamiltonian(chemicalShifts, couplingConstants, multiplicity, conMatrix, cluster) {
+    let hamSize = 1;
+    for (var i = 0; i < cluster.length; i++) {
+        hamSize *= multiplicity[cluster[i]];
+    }
+
+    const clusterHam = new SparseMatrix(hamSize, hamSize);
+
+    for (var pos = 0; pos < cluster.length; pos++) {
+        var n = cluster[pos];
+
+        const L = getPauli(multiplicity[n]);
+
+        let A1, B1;
+        let temp = 1;
+        for (let i = 0; i < pos; i++) {
+            temp *= multiplicity[cluster[i]];
+        }
+        A1 = SparseMatrix.eye(temp);
+
+        temp = 1;
+        for (let i = pos + 1; i < cluster.length; i++) {
+            temp *= multiplicity[cluster[i]];
+        }
+        B1 = SparseMatrix.eye(temp);
+
+        const alpha = chemicalShifts[n];
+        const kronProd = A1.kroneckerProduct(L.z).kroneckerProduct(B1);
+        clusterHam.add(kronProd.mul(alpha));
+
+        for (var pos2 = 0; pos2 < cluster.length; pos2++) {
+            const k = cluster[pos2];
+            if (conMatrix[n][k] === 1) {
+                const S = getPauli(multiplicity[k]);
+
+                let A2, B2;
+                let temp = 1;
+                for (let i = 0; i < pos2; i++) {
+                    temp *= multiplicity[cluster[i]];
+                }
+                A2 = SparseMatrix.eye(temp);
+
+                temp = 1;
+                for (let i = pos2 + 1; i < cluster.length; i++) {
+                    temp *= multiplicity[cluster[i]];
+                }
+                B2 = SparseMatrix.eye(temp);
+
+                const kron1 = A1.kroneckerProduct(L.x).kroneckerProduct(B1).mmul(A2.kroneckerProduct(S.x).kroneckerProduct(B2));
+                kron1.add(A1.kroneckerProduct(L.y).kroneckerProduct(B1).mul(-1).mmul(A2.kroneckerProduct(S.y).kroneckerProduct(B2)));
+                kron1.add(A1.kroneckerProduct(L.z).kroneckerProduct(B1).mmul(A2.kroneckerProduct(S.z).kroneckerProduct(B2)));
+
+                clusterHam.add(kron1.mul(couplingConstants[n][k] / 2));
+            }
+        }
+    }
+
+    return clusterHam;
+}
+
+function _getX(from, to, nbPoints) {
+    const x = new Array(nbPoints);
+    const dx = (to - from) / (nbPoints - 1);
+    for (var i = 0; i < nbPoints; i++) {
+        x[i] = from + i * dx;
+    }
+    return x;
+}
+
+module.exports = simulate1d;
+
+
+/***/ }),
 /* 48 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+const Matrix = __webpack_require__(5);
+
+let defOptions = {'H': {frequency: 400, lineWidth: 10}, 'C': {frequency: 100, lineWidth: 10}};
+
+function simule2DNmrSpectrum(table, options) {
+    var i;
+    const fromLabel = table[0].fromAtomLabel;
+    const toLabel = table[0].toLabel;
+    const frequencyX = options.frequencyX || defOptions[fromLabel].frequency;
+    const frequencyY = options.frequencyY || defOptions[toLabel].frequency;
+    var lineWidthX = options.lineWidthX || defOptions[fromLabel].lineWidth;
+    var lineWidthY = options.lineWidthY || defOptions[toLabel].lineWidth;
+
+    var sigmaX = lineWidthX / frequencyX;
+    var sigmaY = lineWidthY / frequencyY;
+
+    var minX = table[0].fromChemicalShift;
+    var maxX = table[0].fromChemicalShift;
+    var minY = table[0].toChemicalShift;
+    var maxY = table[0].toChemicalShift;
+    i = 1;
+    while (i < table.length) {
+        minX = Math.min(minX, table[i].fromChemicalShift);
+        maxX = Math.max(maxX, table[i].fromChemicalShift);
+        minY = Math.min(minY, table[i].toChemicalShift);
+        maxY = Math.max(maxY, table[i].toChemicalShift);
+        i++;
+    }
+
+    if (options.firstX !== null && !isNaN(options.firstX)) {
+        minX = options.firstX;
+    }
+    if (options.firstY !== null && !isNaN(options.firstY)) {
+        minY = options.firstY;
+    }
+    if (options.lastX !== null && !isNaN(options.lastX)) {
+        maxX = options.lastX;
+    }
+    if (options.lastY !== null && !isNaN(options.lastY)) {
+        maxY = options.lastY;
+    }
+
+    var nbPointsX = options.nbPointsX || 512;
+    var nbPointsY = options.nbPointsY || 512;
+
+    var spectraMatrix = new Matrix(nbPointsY, nbPointsX).fill(0);
+    i = 0;
+    while (i < table.length) {
+        //parameters.couplingConstant = table[i].j;
+        //parameters.pathLength = table[i].pathLength;
+        let peak = {
+            x: unitsToArrayPoints(table[i].fromChemicalShift, minX, maxX, nbPointsX),
+            y: unitsToArrayPoints(table[i].toChemicalShift, minY, maxY, nbPointsY),
+            z: table[i].fromAtoms.length + table[i].toAtoms.length,
+            widthX: unitsToArrayPoints(sigmaX + minX, minX, maxX, nbPointsX),
+            widthY: unitsToArrayPoints(sigmaY + minY, minY, maxY, nbPointsY)
+        };
+        addPeak(spectraMatrix, peak);
+        i++;
+    }
+    return spectraMatrix;
+}
+
+function unitsToArrayPoints(x, from, to, nbPoints) {
+    return ((x - from) * nbPoints - 1) / (to - from);
+}
+
+function addPeak(matrix, peak) {
+    var nSigma = 4;
+    var fromX = Math.max(0, Math.round(peak.x - peak.widthX * nSigma));
+    var toX = Math.min(matrix[0].length - 1, Math.round(peak.x + peak.widthX * nSigma));
+    var fromY = Math.max(0, Math.round(peak.y - peak.widthY * nSigma));
+    var toY = Math.min(matrix.length - 1, Math.round(peak.y + peak.widthY * nSigma));
+
+    var squareSigmaX = peak.widthX * peak.widthX;
+    var squareSigmaY = peak.widthY * peak.widthY;
+    for (var j = fromY; j < toY; j++) {
+        for (var i = fromX; i < toX; i++) {
+            var exponent = Math.pow(peak.x - i, 2) / squareSigmaX +
+                Math.pow(peak.y - j, 2) / squareSigmaY;
+            var result = 10000 * peak.z * Math.exp(-exponent);
+            matrix[j][i] += result;
+        }
+    }
+}
+
+
+module.exports = simule2DNmrSpectrum;
+
+
+/***/ }),
+/* 49 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -8783,7 +8765,7 @@ module.exports = Number.isNaN || function (x) {
 
 
 /***/ }),
-/* 49 */
+/* 50 */
 /***/ (function(module, exports) {
 
 // shim for using process in browser
@@ -8973,7 +8955,7 @@ process.umask = function() { return 0; };
 
 
 /***/ }),
-/* 50 */
+/* 51 */
 /***/ (function(module, exports) {
 
 if (typeof Object.create === 'function') {
@@ -9002,7 +8984,7 @@ if (typeof Object.create === 'function') {
 
 
 /***/ }),
-/* 51 */
+/* 52 */
 /***/ (function(module, exports) {
 
 module.exports = function isBuffer(arg) {
@@ -9013,7 +8995,7 @@ module.exports = function isBuffer(arg) {
 }
 
 /***/ }),
-/* 52 */
+/* 53 */
 /***/ (function(module, exports, __webpack_require__) {
 
 /* WEBPACK VAR INJECTION */(function(global, process) {// Copyright Joyent, Inc. and other Node contributors.
@@ -9541,7 +9523,7 @@ function isPrimitive(arg) {
 }
 exports.isPrimitive = isPrimitive;
 
-exports.isBuffer = __webpack_require__(51);
+exports.isBuffer = __webpack_require__(52);
 
 function objectToString(o) {
   return Object.prototype.toString.call(o);
@@ -9585,7 +9567,7 @@ exports.log = function() {
  *     prototype.
  * @param {function} superCtor Constructor function to inherit prototype from.
  */
-exports.inherits = __webpack_require__(50);
+exports.inherits = __webpack_require__(51);
 
 exports._extend = function(origin, add) {
   // Don't do anything if add isn't an object
@@ -9603,10 +9585,10 @@ function hasOwnProperty(obj, prop) {
   return Object.prototype.hasOwnProperty.call(obj, prop);
 }
 
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(53), __webpack_require__(49)))
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(54), __webpack_require__(50)))
 
 /***/ }),
-/* 53 */
+/* 54 */
 /***/ (function(module, exports) {
 
 var g;
