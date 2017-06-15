@@ -1,3 +1,5 @@
 # nmr-simulation
 
-Simulate NMR spectra from spin systems
+This project has moved to https://github.com/cheminfo-js/spectra
+
+The repository remains here for browser build support
