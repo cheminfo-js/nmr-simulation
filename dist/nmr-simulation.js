@@ -1,6 +1,6 @@
 /**
  * nmr-simulation
- * @version v1.0.4
+ * @version v1.0.5
  */
 (function webpackUniversalModuleDefinition(root, factory) {
 	if(typeof exports === 'object' && typeof module === 'object')
