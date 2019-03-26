@@ -1,6 +1,6 @@
 /**
  * nmr-simulation
- * @version v1.0.3
+ * @version v1.0.4
  */
 (function webpackUniversalModuleDefinition(root, factory) {
 	if(typeof exports === 'object' && typeof module === 'object')
@@ -320,45 +320,12 @@ module.exports = SparseMatrix;
  Add dynamically instance and static methods for mathematical operations
  */
 
-var inplaceOperator = `
-(function %name%(value) {
-    if (typeof value === 'number') return this.%name%S(value);
-    return this.%name%M(value);
-})
-`;
-var inplaceOperatorScalar = `
-(function %name%S(value) {
-    this.forEachNonZero((i, j, v) => v %op% value);
-    return this;
-})
-`;
-var inplaceOperatorMatrix = `
-(function %name%M(matrix) {
-    matrix.forEachNonZero((i, j, v) => {
-        this.set(i, j, this.get(i, j) %op% v);
-        return v;
-    });
-    return this;
-})
-`;
-var staticOperator = `
-(function %name%(matrix, value) {
-    var newMatrix = new SparseMatrix(matrix);
-    return newMatrix.%name%(value);
-})
-`;
-var inplaceMethod = `
-(function %name%() {
-    this.forEachNonZero((i, j, v) => %method%(v));
-    return this;
-})
-`;
-var staticMethod = `
-(function %name%(matrix) {
-    var newMatrix = new SparseMatrix(matrix);
-    return newMatrix.%name%();
-})
-`;
+var inplaceOperator = "\n(function %name%(value) {\n    if (typeof value === 'number') return this.%name%S(value);\n    return this.%name%M(value);\n})\n";
+var inplaceOperatorScalar = "\n(function %name%S(value) {\n    this.forEachNonZero((i, j, v) => v %op% value);\n    return this;\n})\n";
+var inplaceOperatorMatrix = "\n(function %name%M(matrix) {\n    matrix.forEachNonZero((i, j, v) => {\n        this.set(i, j, this.get(i, j) %op% v);\n        return v;\n    });\n    return this;\n})\n";
+var staticOperator = "\n(function %name%(matrix, value) {\n    var newMatrix = new SparseMatrix(matrix);\n    return newMatrix.%name%(value);\n})\n";
+var inplaceMethod = "\n(function %name%() {\n    this.forEachNonZero((i, j, v) => %method%(v));\n    return this;\n})\n";
+var staticMethod = "\n(function %name%(matrix) {\n    var newMatrix = new SparseMatrix(matrix);\n    return newMatrix.%name%();\n})\n";
 var operators = [// Arithmetic operators
 ['+', 'add'], ['-', 'sub', 'subtract'], ['*', 'mul', 'multiply'], ['/', 'div', 'divide'], ['%', 'mod', 'modulus'], // Bitwise operators
 ['&', 'and'], ['|', 'or'], ['^', 'xor'], ['<<', 'leftShift'], ['>>', 'signPropagatingRightShift'], ['>>>', 'rightShift', 'zeroFillRightShift']];
@@ -2297,7 +2264,7 @@ function abstractMatrix(superCtor) {
 
       if (c1 !== r2) {
         // eslint-disable-next-line no-console
-        console.warn(`Multiplying ${r1} x ${c1} and ${r2} x ${c2} matrix: dimensions do not match.`);
+        console.warn("Multiplying ".concat(r1, " x ").concat(c1, " and ").concat(r2, " x ").concat(c2, " matrix: dimensions do not match."));
       } // Put a matrix into the top left of a matrix of zeros.
       // `rows` and `cols` are the dimensions of the output matrix.
 
@@ -2844,100 +2811,17 @@ function abstractMatrix(superCtor) {
    Add dynamically instance and static methods for mathematical operations
    */
 
-  var inplaceOperator = `
-(function %name%(value) {
-    if (typeof value === 'number') return this.%name%S(value);
-    return this.%name%M(value);
-})
-`;
-  var inplaceOperatorScalar = `
-(function %name%S(value) {
-    for (var i = 0; i < this.rows; i++) {
-        for (var j = 0; j < this.columns; j++) {
-            this.set(i, j, this.get(i, j) %op% value);
-        }
-    }
-    return this;
-})
-`;
-  var inplaceOperatorMatrix = `
-(function %name%M(matrix) {
-    matrix = this.constructor.checkMatrix(matrix);
-    checkDimensions(this, matrix);
-    for (var i = 0; i < this.rows; i++) {
-        for (var j = 0; j < this.columns; j++) {
-            this.set(i, j, this.get(i, j) %op% matrix.get(i, j));
-        }
-    }
-    return this;
-})
-`;
-  var staticOperator = `
-(function %name%(matrix, value) {
-    var newMatrix = new this[Symbol.species](matrix);
-    return newMatrix.%name%(value);
-})
-`;
-  var inplaceMethod = `
-(function %name%() {
-    for (var i = 0; i < this.rows; i++) {
-        for (var j = 0; j < this.columns; j++) {
-            this.set(i, j, %method%(this.get(i, j)));
-        }
-    }
-    return this;
-})
-`;
-  var staticMethod = `
-(function %name%(matrix) {
-    var newMatrix = new this[Symbol.species](matrix);
-    return newMatrix.%name%();
-})
-`;
-  var inplaceMethodWithArgs = `
-(function %name%(%args%) {
-    for (var i = 0; i < this.rows; i++) {
-        for (var j = 0; j < this.columns; j++) {
-            this.set(i, j, %method%(this.get(i, j), %args%));
-        }
-    }
-    return this;
-})
-`;
-  var staticMethodWithArgs = `
-(function %name%(matrix, %args%) {
-    var newMatrix = new this[Symbol.species](matrix);
-    return newMatrix.%name%(%args%);
-})
-`;
-  var inplaceMethodWithOneArgScalar = `
-(function %name%S(value) {
-    for (var i = 0; i < this.rows; i++) {
-        for (var j = 0; j < this.columns; j++) {
-            this.set(i, j, %method%(this.get(i, j), value));
-        }
-    }
-    return this;
-})
-`;
-  var inplaceMethodWithOneArgMatrix = `
-(function %name%M(matrix) {
-    matrix = this.constructor.checkMatrix(matrix);
-    checkDimensions(this, matrix);
-    for (var i = 0; i < this.rows; i++) {
-        for (var j = 0; j < this.columns; j++) {
-            this.set(i, j, %method%(this.get(i, j), matrix.get(i, j)));
-        }
-    }
-    return this;
-})
-`;
-  var inplaceMethodWithOneArg = `
-(function %name%(value) {
-    if (typeof value === 'number') return this.%name%S(value);
-    return this.%name%M(value);
-})
-`;
+  var inplaceOperator = "\n(function %name%(value) {\n    if (typeof value === 'number') return this.%name%S(value);\n    return this.%name%M(value);\n})\n";
+  var inplaceOperatorScalar = "\n(function %name%S(value) {\n    for (var i = 0; i < this.rows; i++) {\n        for (var j = 0; j < this.columns; j++) {\n            this.set(i, j, this.get(i, j) %op% value);\n        }\n    }\n    return this;\n})\n";
+  var inplaceOperatorMatrix = "\n(function %name%M(matrix) {\n    matrix = this.constructor.checkMatrix(matrix);\n    checkDimensions(this, matrix);\n    for (var i = 0; i < this.rows; i++) {\n        for (var j = 0; j < this.columns; j++) {\n            this.set(i, j, this.get(i, j) %op% matrix.get(i, j));\n        }\n    }\n    return this;\n})\n";
+  var staticOperator = "\n(function %name%(matrix, value) {\n    var newMatrix = new this[Symbol.species](matrix);\n    return newMatrix.%name%(value);\n})\n";
+  var inplaceMethod = "\n(function %name%() {\n    for (var i = 0; i < this.rows; i++) {\n        for (var j = 0; j < this.columns; j++) {\n            this.set(i, j, %method%(this.get(i, j)));\n        }\n    }\n    return this;\n})\n";
+  var staticMethod = "\n(function %name%(matrix) {\n    var newMatrix = new this[Symbol.species](matrix);\n    return newMatrix.%name%();\n})\n";
+  var inplaceMethodWithArgs = "\n(function %name%(%args%) {\n    for (var i = 0; i < this.rows; i++) {\n        for (var j = 0; j < this.columns; j++) {\n            this.set(i, j, %method%(this.get(i, j), %args%));\n        }\n    }\n    return this;\n})\n";
+  var staticMethodWithArgs = "\n(function %name%(matrix, %args%) {\n    var newMatrix = new this[Symbol.species](matrix);\n    return newMatrix.%name%(%args%);\n})\n";
+  var inplaceMethodWithOneArgScalar = "\n(function %name%S(value) {\n    for (var i = 0; i < this.rows; i++) {\n        for (var j = 0; j < this.columns; j++) {\n            this.set(i, j, %method%(this.get(i, j), value));\n        }\n    }\n    return this;\n})\n";
+  var inplaceMethodWithOneArgMatrix = "\n(function %name%M(matrix) {\n    matrix = this.constructor.checkMatrix(matrix);\n    checkDimensions(this, matrix);\n    for (var i = 0; i < this.rows; i++) {\n        for (var j = 0; j < this.columns; j++) {\n            this.set(i, j, %method%(this.get(i, j), matrix.get(i, j)));\n        }\n    }\n    return this;\n})\n";
+  var inplaceMethodWithOneArg = "\n(function %name%(value) {\n    if (typeof value === 'number') return this.%name%S(value);\n    return this.%name%M(value);\n})\n";
   var staticMethodWithOneArg = staticMethodWithArgs;
   var operators = [// Arithmetic operators
   ['+', 'add'], ['-', 'sub', 'subtract'], ['*', 'mul', 'multiply'], ['/', 'div', 'divide'], ['%', 'mod', 'modulus'], // Bitwise operators
@@ -2995,7 +2879,7 @@ function abstractMatrix(superCtor) {
     var args = 'arg0';
 
     for (i = 1; i < methodWithArg[1]; i++) {
-      args += `, arg${i}`;
+      args += ", arg".concat(i);
     }
 
     if (methodWithArg[1] !== 1) {
@@ -9495,22 +9379,22 @@ class HashTable {
     const initialCapacity = options.initialCapacity === undefined ? defaultInitialCapacity : options.initialCapacity;
 
     if (initialCapacity < 0) {
-      throw new RangeError(`initial capacity must not be less than zero: ${initialCapacity}`);
+      throw new RangeError("initial capacity must not be less than zero: ".concat(initialCapacity));
     }
 
     const minLoadFactor = options.minLoadFactor === undefined ? defaultMinLoadFactor : options.minLoadFactor;
     const maxLoadFactor = options.maxLoadFactor === undefined ? defaultMaxLoadFactor : options.maxLoadFactor;
 
     if (minLoadFactor < 0 || minLoadFactor >= 1) {
-      throw new RangeError(`invalid minLoadFactor: ${minLoadFactor}`);
+      throw new RangeError("invalid minLoadFactor: ".concat(minLoadFactor));
     }
 
     if (maxLoadFactor <= 0 || maxLoadFactor >= 1) {
-      throw new RangeError(`invalid maxLoadFactor: ${maxLoadFactor}`);
+      throw new RangeError("invalid maxLoadFactor: ".concat(maxLoadFactor));
     }
 
     if (minLoadFactor >= maxLoadFactor) {
-      throw new RangeError(`minLoadFactor (${minLoadFactor}) must be smaller than maxLoadFactor (${maxLoadFactor})`);
+      throw new RangeError("minLoadFactor (".concat(minLoadFactor, ") must be smaller than maxLoadFactor (").concat(maxLoadFactor, ")"));
     }
 
     let capacity = initialCapacity; // User wants to put at least capacity elements. We need to choose the size based on the maxLoadFactor to
@@ -10224,6 +10108,20 @@ function getPauli(mult) {
 
 
 const smallValue = 1e-2;
+/**
+ * This function simulates a one dimensional nmr spectrum. This function returns an array containing the relative intensities of the spectrum in the specified simulation window (from-to).
+ * @param {object} spinSystem - The SpinSystem object to be simulated
+ * @param {object} options
+ * @param {number} options.frequency - The frequency in Mhz of the fake spectrometer that records the spectrum. 400 by default
+ * @param {number} options.from - The low limit of the ordinate variable. 0 by default
+ * @param {number} options.to - The upper limit of the ordinate variable. 10 by default|
+ * @param {number} options.lineWidth - The linewidth of the output spectrum, expresed in Hz. 1Hz by default
+ * @param {number} options.nbPoints - Number of points of the output spectrum. 1024 by default
+ * @param {number} options.maxClusterSize - Maximum number of atoms on each cluster that can be considered to be simulated together. It affects the the quality and speed of the simulation. 10 by default
+ * @param {number} options.output - ['y' or 'xy'] it specify the output format. if 'y' is specified, the output of the simulation will be a single vector containing the y data of the spectrum. if 'xy' is specified, the output of the simulation will be an object containing {x,[], y:[]}, the x, y of the spectrum. 'y' by default
+ * @return {object}
+ */
+
 function simulate1d(spinSystem, options) {
   var i, j;
   var _options$lineWidth = options.lineWidth,
@@ -10245,17 +10143,23 @@ function simulate1d(spinSystem, options) {
 
   for (i = 0; i < chemicalShifts.length; i++) {
     chemicalShifts[i] = chemicalShifts[i] * frequencyMHz;
-  }
+  } //Prepare pseudo voigt
 
-  let lineWidthPoints = nbPoints * lineWidth / Math.abs(to - from) / 2.355;
-  let lnPoints = lineWidthPoints * 20;
+
+  let lineWidthPointsG = nbPoints * lineWidth / Math.abs(to - from) / 2.355;
+  let lineWidthPointsL = nbPoints * lineWidth / Math.abs(to - from) / 2;
+  let lnPoints = lineWidthPointsL * 40;
   const gaussianLength = lnPoints | 0;
   const gaussian = new Array(gaussianLength);
   const b = lnPoints / 2;
-  const c = lineWidthPoints * lineWidthPoints * 2;
+  const c = lineWidthPointsG * lineWidthPointsG * 2;
+  const l2 = lineWidthPointsL * lineWidthPointsL;
+  const g2pi = lineWidthPointsG * Math.sqrt(2 * Math.PI);
 
   for (i = 0; i < gaussianLength; i++) {
-    gaussian[i] = 1e9 * Math.exp(-((i - b) * (i - b)) / c);
+    let x2 = (i - b) * (i - b);
+    gaussian[i] = 10e9 * (Math.exp(-x2 / c) / g2pi + lineWidthPointsL / ((x2 + l2) * Math.PI));
+    console.log(gaussian[i]);
   }
 
   var result = options.withNoise ? [...new Array(nbPoints)].map(() => Math.random() * noiseFactor) : new Array(nbPoints).fill(0);
@@ -10402,7 +10306,7 @@ function simulate1d(spinSystem, options) {
 
     if (numFreq > 0) {
       weight = weight / sumI;
-      const diff = lineWidth / 32;
+      const diff = lineWidth / 64;
       let valFreq = frequencies[0];
       let inte = intensities[0];
       let count = 1;
@@ -10437,6 +10341,16 @@ function simulate1d(spinSystem, options) {
 
   throw new RangeError('wrong output option');
 }
+/**
+ * Add a new peak to the current array
+ * @param {Array} result - Array of numbers
+ * @param {number} freq - center of the peak
+ * @param {*} height - peak height
+ * @param {*} from - start point of the peak
+ * @param {*} to - end point of the peak
+ * @param {*} nbPoints - number of points to add
+ * @param {*} gaussian - Shape to fill with
+ */
 
 function addPeak(result, freq, height, from, to, nbPoints, gaussian) {
   const center = nbPoints * (-freq - from) / (to - from) | 0;
@@ -10462,6 +10376,16 @@ function triuTimesAbs(A, val) {
     return v;
   });
 }
+/**
+ * Create a hamiltonian matrix for the given spinsystem
+ * @param {Array} chemicalShifts - An array containing the chemical shift in Hz
+ * @param {Array} couplingConstants - An array containing the coupling constants in Hz
+ * @param {Array} multiplicity - An array specifiying the multiplicities of each scalar coupling
+ * @param {Array} conMatrix - A one step connectivity matrix for the given spin system
+ * @param {Array} cluster - An binary array specifiying the spins to be considered for this hamiltonial
+ * @return {object}
+ */
+
 
 function getHamiltonian(chemicalShifts, couplingConstants, multiplicity, conMatrix, cluster) {
   let hamSize = 1;
