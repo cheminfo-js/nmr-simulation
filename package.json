@@ -1,7 +1,7 @@
 {
   "private": true,
   "name": "nmr-simulation",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "main": "./index.js",
   "scripts": {
     "build": "cheminfo build"

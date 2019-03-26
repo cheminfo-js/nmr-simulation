@@ -1,6 +1,6 @@
 /**
  * nmr-simulation
- * @version v1.0.5
+ * @version v1.0.6
  */
 (function webpackUniversalModuleDefinition(root, factory) {
 	if(typeof exports === 'object' && typeof module === 'object')
@@ -10159,7 +10159,6 @@ function simulate1d(spinSystem, options) {
   for (i = 0; i < gaussianLength; i++) {
     let x2 = (i - b) * (i - b);
     gaussian[i] = 10e9 * (Math.exp(-x2 / c) / g2pi + lineWidthPointsL / ((x2 + l2) * Math.PI));
-    console.log(gaussian[i]);
   }
 
   var result = options.withNoise ? [...new Array(nbPoints)].map(() => Math.random() * noiseFactor) : new Array(nbPoints).fill(0);
